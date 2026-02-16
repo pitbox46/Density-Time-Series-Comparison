@@ -137,6 +137,7 @@ fda_ar <- function(target_year, densities_grid, quantile_grid) {
 
 FDA_AR_fits <- lapply(2010:2024, fda_ar, densities_grid = densities_grid, quantile_grid = quantile_grid)
 FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x$wasserstein_dist)
+mean(FDA_AR_distances)
 
 # Wasserstein AR model
 
@@ -144,12 +145,21 @@ library(WRI)
 
 # Computes a prediction for the target year using WAR1
 wasserstein_ar <- function(target_year, densities_grid, quantile_grid, order) {
-  data_WAR1 <- WARp(data_quantiles, quantile_grid, order)
+  data_WAR1 <- WARp(
+    data_quantiles[, which(colnames(data_quantiles) < target_year)],
+    quantile_grid,
+    order
+  )
   war_pred <- predict(data_WAR1, densities_grid, densities_grid)
+  quantiles_pred <- dens2quantile(
+    war_pred$pred.pdf,
+    dSup = densities_grid[-length(densities_grid)],
+    quantile_grid
+  )
 
   target_year_data <- get_data_by_year(target_year)
   target_year_quantiles <- get_quantiles_by_year(target_year_data, quantile_grid)
-  wasserstein_dist <- wass_dist(war_pred$dSup, target_year_quantiles, quantile_grid)
+  wasserstein_dist <- wass_dist(quantiles_pred, target_year_quantiles, quantile_grid)
 
   list(
     WARp_obj = data_WAR1,
@@ -161,11 +171,17 @@ wasserstein_ar <- function(target_year, densities_grid, quantile_grid, order) {
   )
 }
 
-WAR_fits <- lapply(2010:2024, wasserstein_ar, quantile_grid = quantile_grid, order = 1)
+WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 1)
 WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
+mean(WAR_distances)
 
-WAR_fits <- lapply(2010:2024, wasserstein_ar, quantile_grid = quantile_grid, order = 2)
+WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 2)
 WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
+mean(WAR_distances)
+
+WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 3)
+WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
+mean(WAR_distances)
 
 # Plots
 
