@@ -50,7 +50,7 @@ data_densities <- cps |>
         bw = 50000,
         from = -200000,
         to = 3000000,
-        n = 1024
+        n = 4096
       )
       densities_grid <<- dens$x
       dens$y
@@ -84,7 +84,6 @@ get_quantiles_by_year <- function(target_year_data, quantile_grid) {
 }
 
 # Wasserstein Distance for model comparison
-
 wass_dist <- function(quantile1, quantile2, quantile_grid) {
   ret <- 0
   for (i in 1:(length(quantile_grid) - 1)) {
@@ -99,6 +98,8 @@ wass_dist <- function(quantile1, quantile2, quantile_grid) {
 
 library(ftsa)
 
+# Predicts the target year using a model built from all years prior
+# Uses a naive FPCA approach
 fda_ar <- function(target_year, densities_grid, quantile_grid) {
   dens_fts <- fts(
     densities_grid,
@@ -117,6 +118,7 @@ fda_ar <- function(target_year, densities_grid, quantile_grid) {
   target_year_data <- get_data_by_year(target_year)
   target_year_quantiles <- get_quantiles_by_year(target_year_data, quantile_grid)
 
+  # Sometimes pdf_forecast is less than zero, which is problematic
   wasserstein_dist <- wass_dist(
     target_year_quantiles,
     dens2quantile(
@@ -143,7 +145,8 @@ mean(FDA_AR_distances)
 
 library(WRI)
 
-# Computes a prediction for the target year using WAR1
+# Predicts the target year using a model built from all years prior
+# Uses WARp model
 wasserstein_ar <- function(target_year, densities_grid, quantile_grid, order) {
   data_WAR1 <- WARp(
     data_quantiles[, which(colnames(data_quantiles) < target_year)],
@@ -151,6 +154,7 @@ wasserstein_ar <- function(target_year, densities_grid, quantile_grid, order) {
     order
   )
   war_pred <- predict(data_WAR1, densities_grid, densities_grid)
+  # TODO Find a better way to do this
   quantiles_pred <- dens2quantile(
     war_pred$pred.pdf,
     dSup = densities_grid[-length(densities_grid)],
@@ -182,8 +186,3 @@ mean(WAR_distances)
 WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 3)
 WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
 mean(WAR_distances)
-
-# Plots
-
-plot(log(target_year_quantiles), quantile_grid, type = "l", lwd = 2)
-lines(log(war_pred$dSup), war_pred$pred.cdf, col = "red")
