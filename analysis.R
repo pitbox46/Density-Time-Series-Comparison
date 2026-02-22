@@ -35,7 +35,7 @@ import_cps <- function(load_file, years, data_file = "./data.RData") {
   return(cps)
 }
 
-setwd("~/School/Now/STAT-S799/IncomesDataAnalysis/")
+setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 cps <- import_cps(load_file = TRUE, years = NA)
 
 # Initialize
@@ -48,19 +48,20 @@ analysis_obj$create_dens(
   to = 3000000,
   n = 4096
 )
-analysis_obj$create_quants(seq(0, 1, 0.001))
+# getBinnedData in fdapace starts binning data if we
+# make this increment too small.
+analysis_obj$create_quants(seq(0, 1, 0.01))
 
 # FDA AR1 Model
 
-analysis_obj$fda_ar(2010)
 FDA_AR_fits <- lapply(2010:2024, analysis_obj$fda_ar)
-FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x$wasserstein_dist)
+FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x[[1]])
 mean(FDA_AR_distances)
 
 # Wasserstein AR model
 
-WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 1)
-WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
+WAR_fits <- lapply(2010:2024, analysis_obj$wasserstein_ar, order = 1)
+WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
 mean(WAR_distances)
 
 WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 2)

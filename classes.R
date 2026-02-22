@@ -73,7 +73,7 @@ DensityTimeSeries <- R6Class(
       if (is.na(target_time)) {
         self$quant_mat
       } else {
-        self$quant_mat[, which(rownames(self$quant_mat) == target_time)]
+        self$quant_mat[, which(colnames(self$quant_mat) == target_time)]
       }
     },
     # Predicts the target year using a model built from all years prior
@@ -110,19 +110,23 @@ DensityTimeSeries <- R6Class(
     # Uses WARp model
     wasserstein_ar = function(target_year, order) {
       data_WAR1 <- WARp(
-        self$quant_mat[, which(colnames(quant_mat) < target_year)],
+        self$quant_mat[, which(colnames(self$quant_mat) < target_year)],
         self$quant_grid,
         order
       )
       forecast_war <- predict(data_WAR1, self$dens_grid, self$dens_grid)
 
-      forecast_quant <- self$cdf2quant(
+      forecast_quant <- cdf2quant(
         forecast_war$pred.cdf,
         self$dens_grid[-length(self$dens_grid)],
         self$quant_grid
       )
 
-      wasserstein_dist <- wass_dist(self$get_quant(target_year), forecast_quant, self$quant_grid)
+      wasserstein_dist <- wass_dist(
+        self$get_quant(target_year),
+        forecast_quant$y,
+        self$quant_grid
+      )
 
       list(wasserstein_dist, forecast_quant)
     }
