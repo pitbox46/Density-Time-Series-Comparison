@@ -1,3 +1,5 @@
+options(error = function() traceback(3))
+
 # Load data file or get the data from the CPS API
 import_cps <- function(load_file, years, data_file = "./data.RData") {
   # If we have one saved, we use the given file instead
@@ -36,144 +38,26 @@ import_cps <- function(load_file, years, data_file = "./data.RData") {
 setwd("~/School/Now/STAT-S799/IncomesDataAnalysis/")
 cps <- import_cps(load_file = TRUE, years = NA)
 
-# Create Densities
+# Initialize
 
-library(plyr)
+analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
-data_densities <- cps |>
-  daply(
-    .(Year),
-    function(x) {
-      dens <- density(
-        x$ptotval,
-        weights = x$a_ernlwt,
-        bw = 50000,
-        from = -200000,
-        to = 3000000,
-        n = 4096
-      )
-      densities_grid <<- dens$x
-      dens$y
-    }
-  ) |>
-  t()
-
-# Create Quantiles
-
-library(Hmisc)
-library(fdadensity)
-
-quantile_grid <- seq(0, 1, 0.005)
-data_quantiles <- cps |>
-  daply(
-    .(Year),
-    \(x) wtd.quantile(x$ptotval, weights = x$a_ernlwt, probs = quantile_grid)
-  ) |>
-  t()
-
-get_data_by_year <- function(target_year) {
-  subset(cps, Year == target_year)
-}
-
-get_quantiles_by_year <- function(target_year_data, quantile_grid) {
-  wtd.quantile(
-    target_year_data$ptotval,
-    weights = target_year_data$a_ernlwt,
-    probs = quantile_grid
-  )
-}
-
-# Wasserstein Distance for model comparison
-wass_dist <- function(quantile1, quantile2, quantile_grid) {
-  ret <- 0
-  for (i in 1:(length(quantile_grid) - 1)) {
-    step <- quantile_grid[i + 1] - quantile_grid[i]
-
-    ret <- ret + (quantile2[i] - quantile1[i])^2 * step
-  }
-  sqrt(ret)
-}
+analysis_obj$create_dens(
+  bw = 50000,
+  from = -200000,
+  to = 3000000,
+  n = 4096
+)
+analysis_obj$create_quants(seq(0, 1, 0.001))
 
 # FDA AR1 Model
 
-library(ftsa)
-
-# Predicts the target year using a model built from all years prior
-# Uses a naive FPCA approach
-fda_ar <- function(target_year, densities_grid, quantile_grid) {
-  dens_fts <- fts(
-    densities_grid,
-    data_densities[, which(colnames(data_densities) < target_year)]
-  )
-  dens_ftsm <- ftsm(dens_fts, order = 3)
-  # Not sure if this is AR(1) or some other model
-  dens_forecast <- forecast(
-    dens_ftsm,
-    method = "arima",
-    level = 95,
-    h = 1
-  )
-  pdf_forecast <- dens_forecast$mean$y[, 1]
-
-  target_year_data <- get_data_by_year(target_year)
-  target_year_quantiles <- get_quantiles_by_year(target_year_data, quantile_grid)
-
-  # Sometimes pdf_forecast is less than zero, which is problematic
-  wasserstein_dist <- wass_dist(
-    target_year_quantiles,
-    dens2quantile(
-      matrix(ifelse(pdf_forecast < 0, 0, pdf_forecast), nrow = 1),
-      dens_forecast$mean$x,
-      quantile_grid
-    ),
-    quantile_grid
-  )
-
-  list(
-    target_year_data = target_year_data,
-    target_year = target_year,
-    target_year_quantiles = target_year_quantiles,
-    wasserstein_dist = wasserstein_dist
-  )
-}
-
-FDA_AR_fits <- lapply(2010:2024, fda_ar, densities_grid = densities_grid, quantile_grid = quantile_grid)
+analysis_obj$fda_ar(2010)
+FDA_AR_fits <- lapply(2010:2024, analysis_obj$fda_ar)
 FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x$wasserstein_dist)
 mean(FDA_AR_distances)
 
 # Wasserstein AR model
-
-library(WRI)
-
-# Predicts the target year using a model built from all years prior
-# Uses WARp model
-wasserstein_ar <- function(target_year, densities_grid, quantile_grid, order) {
-  data_WAR1 <- WARp(
-    data_quantiles[, which(colnames(data_quantiles) < target_year)],
-    quantile_grid,
-    order
-  )
-  war_pred <- predict(data_WAR1, densities_grid, densities_grid)
-  # TODO Find a better way to do this
-  quantiles_pred <- dens2quantile(
-    war_pred$pred.pdf,
-    dSup = densities_grid[-length(densities_grid)],
-    quantile_grid
-  )
-
-  target_year_data <- get_data_by_year(target_year)
-  target_year_quantiles <- get_quantiles_by_year(target_year_data, quantile_grid)
-  wasserstein_dist <- wass_dist(quantiles_pred, target_year_quantiles, quantile_grid)
-
-  list(
-    WARp_obj = data_WAR1,
-    WARp_pred = war_pred,
-    target_year_data = target_year_data,
-    target_year = target_year,
-    target_year_quantiles = target_year_quantiles,
-    wasserstein_dist = wasserstein_dist
-  )
-}
 
 WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 1)
 WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
