@@ -21,6 +21,22 @@ wass_dist <- function(quant1, quant2, quant_grid) {
   sqrt(ret)
 }
 
+# Computes a KDE using the normal kernel from a supplied grid of points
+density_from_grid <- function(data, h, grid, weights = NULL) {
+  if (is.null(weights)) {
+    n <- length(data)
+    weights <- rep(1, n)
+  } else {
+    n <- sum(weights)
+    data <- data[weights != 0]
+    weights <- weights[weights != 0]
+  }
+
+  grid |>
+    sapply(function(x) weights * dnorm((data - x) / h, 0, 1)) |>
+    apply(2, sum) / n / h
+}
+
 library(R6)
 DensityTimeSeries <- R6Class(
   "DensityTimeSeries",
@@ -37,19 +53,19 @@ DensityTimeSeries <- R6Class(
         weights = ifelse(is.na(data_weights), 1, data_weights)
       )
     },
-    create_dens = function(bw, ...) {
+    create_dens = function(h, dens_grid) {
+      self$dens_grid <- dens_grid
       densities <- daply(
         self$data,
         .(time),
         function(xx) {
-          dens <- density(
+          dens <- density_from_grid(
             xx$x,
-            weights = xx$weights,
-            bw = bw,
-            ...
+            h = h,
+            grid = dens_grid,
+            weights = xx$weights
           )
-          self$dens_grid <<- dens$x
-          dens$y
+          dens
         }
       )
       self$dens_mat <- t(densities)

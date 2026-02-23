@@ -43,11 +43,10 @@ cps <- import_cps(load_file = TRUE, years = NA)
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
 analysis_obj$create_dens(
-  bw = 50000,
-  from = -200000,
-  to = 3000000,
-  n = 4096
+  h = 50000,
+  seq(-200000, 3000000, length.out = 128)
 )
+
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
 analysis_obj$create_quants(seq(0, 1, 0.01))
@@ -62,12 +61,4 @@ mean(FDA_AR_distances)
 
 WAR_fits <- lapply(2010:2024, analysis_obj$wasserstein_ar, order = 1)
 WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
-mean(WAR_distances)
-
-WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 2)
-WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
-mean(WAR_distances)
-
-WAR_fits <- lapply(2010:2024, wasserstein_ar, densities_grid = densities_grid, quantile_grid = quantile_grid, order = 3)
-WAR_distances <- sapply(WAR_fits, function(x) x$wasserstein_dist)
 mean(WAR_distances)
