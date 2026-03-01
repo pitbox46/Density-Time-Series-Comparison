@@ -24,17 +24,10 @@ wass_dist <- function(quant1, quant2, quant_grid) {
 # Computes a KDE using the normal kernel from a supplied grid of points
 density_from_grid <- function(data, h, grid, weights = NULL) {
   if (is.null(weights)) {
-    n <- length(data)
-    weights <- rep(1, n)
-  } else {
-    n <- sum(weights)
-    data <- data[weights != 0]
-    weights <- weights[weights != 0]
+    weights <- rep_len(1, length(data))
   }
-
-  grid |>
-    sapply(function(x) weights * dnorm((data - x) / h, 0, 1)) |>
-    apply(2, sum) / n / h
+  keep <- weights != 0
+  density_from_grid_cpp(data[keep], h, grid, weights[keep])
 }
 
 library(R6)

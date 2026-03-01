@@ -44,7 +44,7 @@ analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
 analysis_obj$create_dens(
   h = 50000,
-  seq(-200000, 3000000, length.out = 128)
+  seq(-200000, 3000000, length.out = 1028)
 )
 
 # getBinnedData in fdapace starts binning data if we
@@ -62,3 +62,22 @@ mean(FDA_AR_distances)
 WAR_fits <- lapply(2010:2024, analysis_obj$wasserstein_ar, order = 1)
 WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
 mean(WAR_distances)
+
+# TESTING
+
+library(microbenchmark)
+
+x <- rnorm(1000)^2
+grid <- seq(0, 9, length.out = 1000)
+
+microbenchmark(
+  density_from_grid(x, 0.5, grid),
+  density(x, from = 0, to = 9, n = 1000, bw = 0.5)
+)
+
+x <- c(1, 2, 3, 5)
+weights <- c(1, 1, 2, 1)
+
+plot(grid, density_from_grid(x, 0.5, grid))
+dens <- density(x, from = 0, to = 9, n = 1000, bw = 0.5)
+lines(dens$x, dens$y)
