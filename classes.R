@@ -23,12 +23,12 @@ wass_dist <- function(quant1, quant2, quant_grid) {
 
 # Computes a KDE using the normal kernel from a supplied grid of points
 Rcpp::sourceCpp("density_from_grid.cpp")
-density_from_grid <- function(data, h, grid, weights = NULL) {
+density_from_grid <- function(data, h, grid, weights = NULL, cutoff = 6) {
   if (is.null(weights)) {
     weights <- rep_len(1, length(data))
   }
   keep <- weights != 0
-  density_from_grid_cpp(data[keep], h, grid, weights[keep])
+  density_from_grid_cpp(data[keep], h, grid, weights[keep], cutoff)
 }
 
 library(R6)
@@ -46,6 +46,8 @@ DensityTimeSeries <- R6Class(
         x = data_x,
         weights = ifelse(is.na(data_weights), 1, data_weights)
       )
+      # Sort data for easier computations later
+      self$data <- self$data[order(self$data$time, self$data$x), ]
     },
     # Creates a grid for KDE evaultion based on the quanitiles of all data
     create_dens_grid = function(h, n) {
@@ -69,7 +71,7 @@ DensityTimeSeries <- R6Class(
             xx$x,
             h = h,
             grid = self$dens_grid,
-            weights = xx$weights
+            weights = xx$weights,
           )
           dens
         }

@@ -43,8 +43,6 @@ cps <- import_cps(load_file = TRUE, years = NA)
 source("classes.R")
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
-
-
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
 analysis_obj$create_dens_grid(h = 50000, n = 2048)
