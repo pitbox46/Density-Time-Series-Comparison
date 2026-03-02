@@ -62,7 +62,11 @@ DensityTimeSeries <- R6Class(
         max(self$dens_grid) + 3 * h
       )
     },
-    create_dens = function(h) {
+    # A normal density is non-zero everywhere, but that means we must compute
+    # several values which are essentially zero.
+    # Adding a cutoff limits the number of data points we must iterate over.
+    # The actual cutoff "radius" is h * cutoff
+    create_dens = function(h, cutoff = 6) {
       densities <- daply(
         self$data,
         .(time),
@@ -72,6 +76,7 @@ DensityTimeSeries <- R6Class(
             h = h,
             grid = self$dens_grid,
             weights = xx$weights,
+            cutoff = cutoff
           )
           dens
         }
