@@ -40,12 +40,19 @@ cps <- import_cps(load_file = TRUE, years = NA)
 
 # Initialize
 
+source("classes.R")
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
-analysis_obj$create_dens(
-  h = 50000,
-  seq(-200000, 3000000, length.out = 1028)
-)
+
+
+# If n=4096, we get errors from dens2quantile.
+# Presumably this is due to numerical precison issues
+analysis_obj$create_dens_grid(h = 50000, n = 2048)
+
+# Find a better way to pick h.
+# Using a CV technique would be best, but the custom function
+# is quite slow, so this would take too long.
+analysis_obj$create_dens(h = 50000)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
@@ -63,21 +70,7 @@ WAR_fits <- lapply(2010:2024, analysis_obj$wasserstein_ar, order = 1)
 WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
 mean(WAR_distances)
 
-# TESTING
+# Random Plots
 
-library(microbenchmark)
-
-x <- rnorm(1000)^2
-grid <- seq(0, 9, length.out = 1000)
-
-microbenchmark(
-  density_from_grid(x, 0.5, grid),
-  density(x, from = 0, to = 9, n = 1000, bw = 0.5)
-)
-
-x <- c(1, 2, 3, 5)
-weights <- c(1, 1, 2, 1)
-
-plot(grid, density_from_grid(x, 0.5, grid))
-dens <- density(x, from = 0, to = 9, n = 1000, bw = 0.5)
-lines(dens$x, dens$y)
+plot(analysis_obj$dens_grid, analysis_obj$dens_mat[, 1])
+plot(FDA_AR_fits[[1]][[2]]$mean$x, FDA_AR_fits[[1]][[2]]$mean$y)
