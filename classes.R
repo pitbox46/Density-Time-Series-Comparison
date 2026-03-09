@@ -3,6 +3,7 @@ library(Hmisc)
 library(fdadensity)
 library(ftsa)
 library(WRI)
+library(parallel)
 
 # Static functions
 
@@ -48,6 +49,9 @@ DensityTimeSeries <- R6Class(
       )
       # Sort data for easier computations later
       self$data <- self$data[order(self$data$time, self$data$x), ]
+
+      # Remove 0 or less weighted entries
+      self$data <- self$data[self$data$weights > 0, ]
     },
     # Creates a grid for KDE evaultion based on the quanitiles of all data
     create_dens_grid = function(h, n) {
@@ -61,6 +65,32 @@ DensityTimeSeries <- R6Class(
         self$dens_grid,
         max(self$dens_grid) + 3 * h
       )
+    },
+    calculate_bandwidth = function(time) {
+      data <- self$get_data(time)
+
+      n <- sum(data$weights)
+      h_start <- 1.06 * sqrt(wtd.var(data$x, data$weights)) * n^(-0.2)
+      h_grid <- seq(h_start * 0.05, h_start * 2, length.out = 16)
+
+      likelihoods <- numeric(length(h_grid))
+
+      # Parallelize over h
+      likelihoods <- mclapply(
+        h_grid,
+        function(h) {
+          density_h <- density_from_grid(data$x, h, data$x, data$weights)
+          # Density without x_i at x_i
+          density_i <- density_h * n / (n - data$weights) -
+            (data$weights / (n - data$weights) / h / sqrt(2 * pi))
+          # Due to floating-point issues, some values become negative
+          density_i[density_i <= 0] <- .Machine$double.eps
+          # Log likelihood of x_i
+          sum(data$weights * log(density_i))
+        },
+        mc.cores = 16
+      )
+      cbind(h = h_grid, likelihood = unlist(likelihoods))
     },
     # A normal density is non-zero everywhere, but that means we must compute
     # several values which are essentially zero.
