@@ -26,6 +26,16 @@ wass_dist <- function(quant1, quant2, quant_grid) {
   sqrt(ret)
 }
 
+# Takes a sorted x and k to get adaptive bandwidths
+# Change minimum_dist to prevent h = 0
+knn_bandwidth <- function(x, k, minimum_dist = 0.1) {
+  sapply(seq_along(x), function(i) {
+    left <- max(1, i - k)
+    right <- min(length(x), i + k)
+    max(minimum_dist, abs(x[c(left, right)] - x[i]))
+  })
+}
+
 # Computes a KDE using the normal kernel from a supplied grid of points
 Rcpp::sourceCpp("density_from_grid.cpp")
 density_from_grid <- function(data, h, grid, weights = NULL, cutoff = 6) {
@@ -61,31 +71,36 @@ DensityTimeSeries <- R6Class(
       self$data <- self$data[self$data$weights > 0, ]
     },
     # Creates a grid for KDE evaultion based on the quanitiles of all data
-    create_dens_grid = function(h, n) {
+    create_dens_grid = function(n) {
       self$dens_grid <- Hmisc::wtd.quantile(
         self$data$x,
         weights = self$data$weights,
         probs = seq(0, 1, length.out = n - 2)
       )
       self$dens_grid <- c(
-        min(self$dens_grid) - 3 * h,
+        min(self$dens_grid) - 3,
         self$dens_grid,
-        max(self$dens_grid) + 3 * h
+        max(self$dens_grid) + 3
       )
     },
     calculate_bandwidth = function(time, verbose = FALSE) {
       data <- self$get_data(time)
 
       n <- sum(data$weights)
-      h_start <- 1.06 * sqrt(wtd.var(data$x, data$weights)) * n^(-0.2)
-      h_grid <- seq(h_start * 0.05, h_start * 2, length.out = 16)
+      k_start <- floor(sqrt(length(data$x)))
+      k_grid <- round(seq(
+        k_start * 0.5,
+        k_start * 2,
+        length.out = 16
+      ))
 
-      likelihoods <- numeric(length(h_grid))
+      likelihoods <- numeric(length(k_grid))
 
-      # Parallelize over h
+      # Parallelize over k
       likelihoods <- unlist(mclapply(
-        h_grid,
-        function(h) {
+        k_grid,
+        function(k) {
+          h <- knn_bandwidth(data$x, k)
           density_h <- density_from_grid(data$x, h, data$x, data$weights)
           # Density without x_i at x_i
           density_i <- density_h * n / (n - data$weights) -
@@ -98,10 +113,10 @@ DensityTimeSeries <- R6Class(
         mc.cores = THREADS
       ))
       if (verbose) {
-        print(cbind(h = h_grid, likelihood = likelihoods))
+        print(cbind(h = k_grid, likelihood = likelihoods))
       }
 
-      h_grid[which.max(likelihoods)]
+      k_grid[which.max(likelihoods)]
     },
     # A normal density is non-zero everywhere, but that means we must compute
     # several values which are essentially zero.
@@ -115,6 +130,23 @@ DensityTimeSeries <- R6Class(
           density_from_grid(
             xx$x,
             h = h,
+            grid = self$dens_grid,
+            weights = xx$weights,
+            cutoff = cutoff
+          )
+        },
+        mc.cores = THREADS
+      )
+      self$dens_mat <- do.call(cbind, densities)
+    },
+    create_dens_knn = function(k, cutoff = 6) {
+      data_split <- split(self$data, self$data$time)
+      densities <- mclapply(
+        data_split,
+        function(xx) {
+          density_from_grid(
+            xx$x,
+            h = knn_bandwidth(xx$x, k),
             grid = self$dens_grid,
             weights = xx$weights,
             cutoff = cutoff

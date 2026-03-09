@@ -25,21 +25,14 @@ analysis_obj <- DensityTimeSeries$new(
   log_data$weights
 )
 
-h <- analysis_obj$calculate_bandwidth(10, verbose = FALSE)
+k <- analysis_obj$calculate_bandwidth(10, verbose = TRUE)
 
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
 analysis_obj$create_dens_grid(h = h, n = 1024)
 
 # KNN bandwidths
-x <- analysis_obj$data$x
-k <- 10
-h_i <- sapply(seq_along(x), function(i) {
-  left <- max(1, i - k)
-  right <- min(length(x), i + k)
-  max(abs(x[c(left, right)] - x[i]))
-})
-analysis_obj$create_dens(h_i)
+analysis_obj$create_dens_knn(k)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
