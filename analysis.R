@@ -45,12 +45,12 @@ analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(h = 50000, n = 2048)
+analysis_obj$create_dens_grid(h = 9000, n = 2048)
 
 # Find a better way to pick h.
 # Using a CV technique would be best, but the custom function
 # is quite slow, so this would take too long.
-analysis_obj$create_dens(h = 50000)
+analysis_obj$create_dens(h = 9000)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
