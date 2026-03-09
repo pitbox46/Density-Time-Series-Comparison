@@ -25,7 +25,7 @@ analysis_obj <- DensityTimeSeries$new(
   log_data$weights
 )
 
-analysis_obj$calculate_bandwidth(10)
+analysis_obj$calculate_bandwidth(10, verbose = TRUE)
 
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues

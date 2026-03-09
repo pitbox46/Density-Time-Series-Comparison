@@ -5,6 +5,10 @@ library(ftsa)
 library(WRI)
 library(parallel)
 
+# Configuration
+
+THREADS <- 16
+
 # Static functions
 
 # A mask for the approx() function
@@ -66,7 +70,7 @@ DensityTimeSeries <- R6Class(
         max(self$dens_grid) + 3 * h
       )
     },
-    calculate_bandwidth = function(time) {
+    calculate_bandwidth = function(time, verbose = FALSE) {
       data <- self$get_data(time)
 
       n <- sum(data$weights)
@@ -76,7 +80,7 @@ DensityTimeSeries <- R6Class(
       likelihoods <- numeric(length(h_grid))
 
       # Parallelize over h
-      likelihoods <- mclapply(
+      likelihoods <- unlist(mclapply(
         h_grid,
         function(h) {
           density_h <- density_from_grid(data$x, h, data$x, data$weights)
@@ -88,9 +92,13 @@ DensityTimeSeries <- R6Class(
           # Log likelihood of x_i
           sum(data$weights * log(density_i))
         },
-        mc.cores = 16
-      )
-      cbind(h = h_grid, likelihood = unlist(likelihoods))
+        mc.cores = THREADS
+      ))
+      if (verbose) {
+        print(cbind(h = h_grid, likelihood = likelihoods))
+      }
+
+      h_grid[which.max(likelihoods)]
     },
     # A normal density is non-zero everywhere, but that means we must compute
     # several values which are essentially zero.
