@@ -32,6 +32,9 @@ density_from_grid <- function(data, h, grid, weights = NULL, cutoff = 6) {
   if (is.null(weights)) {
     weights <- rep_len(1, length(data))
   }
+  if (length(h) < length(data)) {
+    h <- rep_len(h, length(data))
+  }
   keep <- weights != 0
   density_from_grid_cpp(data[keep], h, grid, weights[keep], cutoff)
 }

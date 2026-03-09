@@ -43,14 +43,16 @@ cps <- import_cps(load_file = TRUE, years = NA)
 source("classes.R")
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
+h <- analysis_obj$calculate_bandwidth(2010, verbose = TRUE)
+
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(h = 9000, n = 2048)
+analysis_obj$create_dens_grid(h = h, n = 1024)
 
 # Find a better way to pick h.
 # Using a CV technique would be best, but the custom function
 # is quite slow, so this would take too long.
-analysis_obj$create_dens(h = 9000)
+analysis_obj$create_dens(h = h)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
@@ -70,5 +72,5 @@ mean(WAR_distances)
 
 # Random Plots
 
-plot(analysis_obj$dens_grid, analysis_obj$dens_mat[, 1])
+plot(analysis_obj$dens_grid, analysis_obj$dens_mat[, 1], type = "l")
 plot(FDA_AR_fits[[1]][[2]]$mean$x, FDA_AR_fits[[1]][[2]]$mean$y)

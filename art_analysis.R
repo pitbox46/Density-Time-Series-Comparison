@@ -1,7 +1,7 @@
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 
-n <- 100000
+n <- 1000
 mu <- 10
 log_data <- data.frame(
   x = rlnorm(n, mu, 2),
@@ -25,16 +25,21 @@ analysis_obj <- DensityTimeSeries$new(
   log_data$weights
 )
 
-h <- analysis_obj$calculate_bandwidth(10, verbose = TRUE)
+h <- analysis_obj$calculate_bandwidth(10, verbose = FALSE)
 
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(h = h, n = 2048)
+analysis_obj$create_dens_grid(h = h, n = 1024)
 
-# Find a better way to pick h.
-# Using a CV technique would be best, but the custom function
-# is quite slow, so this would take too long.
-analysis_obj$create_dens(h = h)
+# KNN bandwidths
+x <- analysis_obj$data$x
+k <- 10
+h_i <- sapply(seq_along(x), function(i) {
+  left <- max(1, i - k)
+  right <- min(length(x), i + k)
+  max(abs(x[c(left, right)] - x[i]))
+})
+analysis_obj$create_dens(h_i)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
