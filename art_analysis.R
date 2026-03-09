@@ -25,16 +25,16 @@ analysis_obj <- DensityTimeSeries$new(
   log_data$weights
 )
 
-analysis_obj$calculate_bandwidth(10, verbose = TRUE)
+h <- analysis_obj$calculate_bandwidth(10, verbose = TRUE)
 
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(h = 100, n = 2048)
+analysis_obj$create_dens_grid(h = h, n = 2048)
 
 # Find a better way to pick h.
 # Using a CV technique would be best, but the custom function
 # is quite slow, so this would take too long.
-analysis_obj$create_dens(h = 100)
+analysis_obj$create_dens(h = h)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.

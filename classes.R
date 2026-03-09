@@ -105,21 +105,21 @@ DensityTimeSeries <- R6Class(
     # Adding a cutoff limits the number of data points we must iterate over.
     # The actual cutoff "radius" is h * cutoff
     create_dens = function(h, cutoff = 6) {
-      densities <- daply(
-        self$data,
-        .(time),
+      data_split <- split(self$data, self$data$time)
+      densities <- mclapply(
+        data_split,
         function(xx) {
-          dens <- density_from_grid(
+          density_from_grid(
             xx$x,
             h = h,
             grid = self$dens_grid,
             weights = xx$weights,
             cutoff = cutoff
           )
-          dens
-        }
+        },
+        mc.cores = THREADS
       )
-      self$dens_mat <- t(densities)
+      self$dens_mat <- do.call(cbind, densities)
     },
     create_quants = function(quant_grid) {
       self$quant_grid <- quant_grid
