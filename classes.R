@@ -107,10 +107,10 @@ DensityTimeSeries <- R6Class(
     },
     # Predicts the target year using a model built from all years prior
     # Uses a naive FPCA approach
-    fda_ar = function(target_year) {
+    fda_ar = function(target_time) {
       dens_fts <- fts(
         self$dens_grid,
-        self$dens_mat[, which(colnames(self$dens_mat) < target_year)]
+        self$dens_mat[, which(as.numeric(colnames(self$dens_mat)) < target_time)]
       )
       dens_ftsm <- ftsm(dens_fts, order = 3)
       # Not sure if this is AR(1) or some other model
@@ -124,7 +124,7 @@ DensityTimeSeries <- R6Class(
 
       # Sometimes pdf_forecast is less than zero, which is problematic
       wasserstein_dist <- wass_dist(
-        self$get_quant(target_year),
+        self$get_quant(target_time),
         dens2quantile(
           matrix(ifelse(forecast_pdf < 0, 0, forecast_pdf), nrow = 1),
           forecast_dens$mean$x,
@@ -137,9 +137,9 @@ DensityTimeSeries <- R6Class(
     },
     # Predicts the target year using a model built from all years prior
     # Uses WARp model
-    wasserstein_ar = function(target_year, order) {
+    wasserstein_ar = function(target_time, order) {
       data_WAR1 <- WARp(
-        self$quant_mat[, which(colnames(self$quant_mat) < target_year)],
+        self$quant_mat[, which(colnames(self$quant_mat) < target_time)],
         self$quant_grid,
         order
       )
@@ -152,7 +152,7 @@ DensityTimeSeries <- R6Class(
       )
 
       wasserstein_dist <- wass_dist(
-        self$get_quant(target_year),
+        self$get_quant(target_time),
         forecast_quant$y,
         self$quant_grid
       )
