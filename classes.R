@@ -54,6 +54,8 @@ DensityTimeSeries <- R6Class(
   "DensityTimeSeries",
   public = list(
     data = NULL,
+    data_split = NULL,
+    times = NULL,
     dens_grid = NULL,
     dens_mat = NULL,
     quant_grid = NULL,
@@ -69,6 +71,10 @@ DensityTimeSeries <- R6Class(
 
       # Remove 0 or less weighted entries
       self$data <- self$data[self$data$weights > 0, ]
+
+      # Create splits
+      self$data_split <- split(self$data, self$data$time)
+      self$times <- as.numeric(names(self$data_split))
     },
     # Creates a grid for KDE evaultion based on the quanitiles of all data
     create_dens_grid = function(n) {
@@ -83,49 +89,13 @@ DensityTimeSeries <- R6Class(
         max(self$dens_grid) + 3
       )
     },
-    calculate_bandwidth = function(time, verbose = FALSE) {
-      data <- self$get_data(time)
-
-      n <- sum(data$weights)
-      k_start <- floor(sqrt(length(data$x)))
-      k_grid <- round(seq(
-        k_start * 0.5,
-        k_start * 2,
-        length.out = 16
-      ))
-
-      likelihoods <- numeric(length(k_grid))
-
-      # Parallelize over k
-      likelihoods <- unlist(mclapply(
-        k_grid,
-        function(k) {
-          h <- knn_bandwidth(data$x, k)
-          density_h <- density_from_grid(data$x, h, data$x, data$weights)
-          # Density without x_i at x_i
-          density_i <- density_h * n / (n - data$weights) -
-            (data$weights / (n - data$weights) / h / sqrt(2 * pi))
-          # Due to floating-point issues, some values become negative
-          density_i[density_i <= 0] <- .Machine$double.eps
-          # Log likelihood of x_i
-          sum(data$weights * log(density_i))
-        },
-        mc.cores = THREADS
-      ))
-      if (verbose) {
-        print(cbind(h = k_grid, likelihood = likelihoods))
-      }
-
-      k_grid[which.max(likelihoods)]
-    },
     # A normal density is non-zero everywhere, but that means we must compute
     # several values which are essentially zero.
     # Adding a cutoff limits the number of data points we must iterate over.
     # The actual cutoff "radius" is h * cutoff
     create_dens = function(h, cutoff = 6) {
-      data_split <- split(self$data, self$data$time)
       densities <- mclapply(
-        data_split,
+        self$data_split,
         function(xx) {
           density_from_grid(
             xx$x,
@@ -140,9 +110,8 @@ DensityTimeSeries <- R6Class(
       self$dens_mat <- do.call(cbind, densities)
     },
     create_dens_knn = function(k, cutoff = 6) {
-      data_split <- split(self$data, self$data$time)
       densities <- mclapply(
-        data_split,
+        self$data_split,
         function(xx) {
           density_from_grid(
             xx$x,
@@ -178,12 +147,90 @@ DensityTimeSeries <- R6Class(
         self$quant_mat[, which(colnames(self$quant_mat) == target_time)]
       }
     },
+    # KNN selection stuff
+    compute_k_grid = function(length.out = 16) {
+      sqrt_n_avg <- nrow(self$data) / length(self$times)
+      round(seq(sqrt_n_avg / 4, sqrt_n_avg, length.out = length.out))
+    },
+    compute_knn = function(data_split, k_grid) {
+      mclapply(data_split, function(xx) {
+        lapply(k_grid, function(k) {
+          knn_bandwidth(xx$x, k)
+        })
+      },
+      mc.cores = THREADS
+      )
+    },
+    # Calculates the Wasserstein score for a particular density matrix
+    score_density = function(dens_mat, times, start_times) {
+      scores <- numeric(length(times) - start_times)
+
+      idx <- 1
+
+      for (t in times[(start_times + 1):length(times)]) {
+        result <- self$fda_ar(t, dens_mat = dens_mat)
+
+        scores[idx] <- result[[1]]
+
+        idx <- idx + 1
+      }
+
+      mean(scores)
+    },
+    select_knn_bandwidth = function(k_grid_length,
+                                    start_times = 5,
+                                    cutoff = 6,
+                                    verbose = FALSE) {
+      k_grid <- self$compute_k_grid(k_grid_length)
+      data_split <- self$data_split
+      times <- self$times
+
+      h_all <- self$compute_knn(data_split, k_grid)
+
+      scores <- numeric(length(k_grid))
+
+      scores <- unlist(mclapply(
+        seq_along(k_grid),
+        function(ii) {
+          h_list <- lapply(h_all, `[[`, ii)
+
+          dens <- mclapply(
+            seq_along(data_split),
+            function(i) {
+              xx <- data_split[[i]]
+              h <- h_list[[i]]
+
+              density_from_grid(
+                xx$x,
+                h,
+                grid = self$dens_grid,
+                weights = xx$weights,
+                cutoff = cutoff
+              )
+            },
+            mc.cores = THREADS
+          )
+
+          dens_mat <- do.call(cbind, dens)
+          colnames(dens_mat) <- self$times
+
+          self$score_density(dens_mat, times, start_times)
+        },
+        mc.cores = THREADS
+      ))
+
+      if (verbose) {
+        print(cbind(k = k_grid, wasserstein = scores))
+      }
+
+      k_grid[which.min(scores)]
+    },
     # Predicts the target year using a model built from all years prior
     # Uses a naive FPCA approach
-    fda_ar = function(target_time) {
+    fda_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
       dens_fts <- fts(
-        self$dens_grid,
-        self$dens_mat[, which(as.numeric(colnames(self$dens_mat)) < target_time)]
+        dens_grid,
+        dens_mat[, which(as.numeric(colnames(dens_mat)) < target_time)]
       )
       dens_ftsm <- ftsm(dens_fts, order = 3)
       # Not sure if this is AR(1) or some other model

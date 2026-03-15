@@ -39,7 +39,6 @@ setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 cps <- import_cps(load_file = TRUE, years = NA)
 
 # Initialize
-
 source("classes.R")
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 
@@ -47,13 +46,14 @@ analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
 # Presumably this is due to numerical precison issues
 analysis_obj$create_dens_grid(n = 1024)
 
-# KNN bandwidths
-k <- analysis_obj$calculate_bandwidth(2010, verbose = TRUE)
-analysis_obj$create_dens_knn(k)
-
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
 analysis_obj$create_quants(seq(0, 1, 0.01))
+
+# KNN bandwidths
+k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+
+analysis_obj$create_dens_knn(k)
 
 # FDA AR1 Model
 
