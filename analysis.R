@@ -38,6 +38,8 @@ import_cps <- function(load_file, years, data_file = "./data.RData") {
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 cps <- import_cps(load_file = TRUE, years = NA)
 
+cps$ptotval <- cps$ptotval + runif(length(cps$ptotval), -10, 10)
+
 # Initialize
 source("classes.R")
 analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
@@ -55,17 +57,16 @@ k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
 
 analysis_obj$create_dens_knn(k)
 
-# FDA AR1 Model
+# Function to test models
+test_model <- function(times, func, ...) {
+  ar_fits <- lapply(times, func, ...)
+  ar_distances <- sapply(ar_fits, function(x) x[[1]])
+  mean(ar_distances)
+}
 
-FDA_AR_fits <- lapply(2010:2024, analysis_obj$fda_ar)
-FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x[[1]])
-mean(FDA_AR_distances)
-
-# Wasserstein AR model
-
-WAR_fits <- lapply(2010:2024, analysis_obj$wasserstein_ar, order = 1)
-WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
-mean(WAR_distances)
+test_model(2010:2024, analysis_obj$fda_ar)
+test_model(2010:2024, analysis_obj$wasserstein_ar, order = 1)
+test_model(2010:2024, analysis_obj$bayes_ar)
 
 # Random Plots
 

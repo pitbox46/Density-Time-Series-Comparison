@@ -55,6 +55,19 @@ density_from_grid <- function(data, h, grid, weights = NULL, cutoff = 6) {
   density_from_grid_cpp(data[keep], h, grid, weights[keep], cutoff)
 }
 
+# Bayes Space Statics
+clr_transform <- function(dens, grid) {
+  log_dens <- log(pmax(dens, 1e-12))
+  mean_log <- mean(log_dens)
+  log_dens - mean_log
+}
+clr_inverse <- function(h, grid) {
+  f <- exp(h)
+  dx <- diff(grid)
+  dx <- c(dx, dx[length(dx)])
+  f / sum(f * dx)
+}
+
 library(R6)
 DensityTimeSeries <- R6Class(
   "DensityTimeSeries",
@@ -284,6 +297,38 @@ DensityTimeSeries <- R6Class(
       )
 
       list(wasserstein_dist, forecast_quant)
+    },
+    # Bayes Space stuff
+    bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+      dens_mat_bayes <- clr_transform(dens_mat, dens_grid)
+      dens_fts <- fts(
+        dens_grid,
+        dens_mat_bayes[, which(as.numeric(colnames(dens_mat)) < target_time)]
+      )
+      dens_ftsm <- ftsm(dens_fts, order = 3)
+      # Not sure if this is AR(1) or some other model
+      forecast_dens <- forecast(
+        dens_ftsm,
+        method = "arima",
+        level = 95,
+        h = 1
+      )
+      forecast_bayes <- forecast_dens$mean$y[, 1]
+
+      forecast_pdf <- clr_inverse(forecast_bayes, dens_grid)
+
+      # Sometimes pdf_forecast is less than zero, which is problematic
+      wasserstein_dist <- wass_dist(
+        self$get_quant(target_time),
+        dens2quantile(
+          matrix(ifelse(forecast_pdf < 0, 0, forecast_pdf), nrow = 1),
+          forecast_dens$mean$x,
+          self$quant_grid
+        ),
+        self$quant_grid
+      )
+
+      list(wasserstein_dist, forecast_dens)
     }
   ),
   private = list()

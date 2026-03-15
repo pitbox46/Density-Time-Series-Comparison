@@ -25,18 +25,17 @@ analysis_obj <- DensityTimeSeries$new(
   log_data$weights
 )
 
-k <- analysis_obj$calculate_bandwidth(10, verbose = TRUE)
-
 # If n=4096, we get errors from dens2quantile.
 # Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(h = h, n = 1024)
-
-# KNN bandwidths
-analysis_obj$create_dens_knn(k)
+analysis_obj$create_dens_grid(n = 1024)
 
 # getBinnedData in fdapace starts binning data if we
 # make this increment too small.
 analysis_obj$create_quants(seq(0, 1, 0.01))
+
+k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+
+analysis_obj$create_dens_knn(k)
 
 # FDA AR1 Model
 
