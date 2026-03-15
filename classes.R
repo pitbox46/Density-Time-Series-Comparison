@@ -29,11 +29,17 @@ wass_dist <- function(quant1, quant2, quant_grid) {
 # Takes a sorted x and k to get adaptive bandwidths
 # Change minimum_dist to prevent h = 0
 knn_bandwidth <- function(x, k, minimum_dist = 0.1) {
-  sapply(seq_along(x), function(i) {
-    left <- max(1, i - k)
-    right <- min(length(x), i + k)
-    max(minimum_dist, abs(x[c(left, right)] - x[i]))
-  })
+  n <- length(x)
+
+  left <- pmax(seq_len(n) - k, 1)
+  right <- pmin(seq_len(n) + k, n)
+
+  h <- pmax(
+    abs(x - x[left]),
+    abs(x[right] - x)
+  )
+
+  pmax(h, minimum_dist)
 }
 
 # Computes a KDE using the normal kernel from a supplied grid of points
