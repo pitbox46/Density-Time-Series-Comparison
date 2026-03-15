@@ -37,14 +37,12 @@ k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
 
 analysis_obj$create_dens_knn(k)
 
-# FDA AR1 Model
+test_model <- function(times, func, ...) {
+  ar_fits <- lapply(times, func, ...)
+  ar_distances <- sapply(ar_fits, function(x) x[[1]])
+  mean(ar_distances)
+}
 
-FDA_AR_fits <- lapply(20:40, analysis_obj$fda_ar)
-FDA_AR_distances <- sapply(FDA_AR_fits, function(x) x[[1]])
-mean(FDA_AR_distances)
-
-# Wasserstein AR model
-
-WAR_fits <- lapply(20:40, analysis_obj$wasserstein_ar, order = 1)
-WAR_distances <- sapply(WAR_fits, function(x) x[[1]])
-mean(WAR_distances)
+test_model(20:40, analysis_obj$fda_ar)
+test_model(20:40, analysis_obj$wasserstein_ar, order = 1)
+test_model(20:40, analysis_obj$bayes_ar)
