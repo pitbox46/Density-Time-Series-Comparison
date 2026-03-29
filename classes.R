@@ -310,6 +310,43 @@ DensityTimeSeries <- R6Class(
         dens_grid = dens_grid,
         dens_mat = dens_mat
       )
+    },
+    # Bayes Space stuff
+    bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+      self$fda_ar(
+        target_time,
+        transformation = function(dens, grid) {
+          log_dens <- log(pmax(dens, 1e-12))
+          mean_log <- mean(log_dens)
+          log_dens - mean_log
+        },
+        inv_transformation = function(h, grid) {
+          f <- exp(h)
+          dx <- diff(grid)
+          dx <- c(dx, dx[length(dx)])
+          f / sum(f * dx)
+        },
+        dens_grid = dens_grid,
+        dens_mat = dens_mat
+      )
+    },
+    lqd_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+      self$fda_ar(
+        target_time,
+        transformation = function(dens, grid) {
+          log_dens <- log(pmax(dens, 1e-12))
+          mean_log <- mean(log_dens)
+          log_dens - mean_log
+        },
+        inv_transformation = function(h, grid) {
+          f <- exp(h)
+          dx <- diff(grid)
+          dx <- c(dx, dx[length(dx)])
+          f / sum(f * dx)
+        },
+        dens_grid = dens_grid,
+        dens_mat = dens_mat
+      )
     }
   ),
   private = list()
