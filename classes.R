@@ -200,7 +200,7 @@ DensityTimeSeries <- R6Class(
         function(ii) {
           h_list <- lapply(h_all, `[[`, ii)
 
-          dens <- mclapply(
+          dens <- lapply(
             seq_along(data_split),
             function(i) {
               xx <- data_split[[i]]
@@ -213,8 +213,7 @@ DensityTimeSeries <- R6Class(
                 weights = xx$weights,
                 cutoff = cutoff
               )
-            },
-            mc.cores = THREADS
+            }
           )
 
           dens_mat <- do.call(cbind, dens)
@@ -249,7 +248,8 @@ DensityTimeSeries <- R6Class(
         dens_ftsm,
         method = "arima",
         level = 95,
-        h = 1
+        h = 1,
+        max.p = 1, max.d = 0, max.q = 0
       )
       forecast_bayes <- forecast_dens$mean$y[, 1]
 
@@ -311,26 +311,7 @@ DensityTimeSeries <- R6Class(
         dens_mat = dens_mat
       )
     },
-    # Bayes Space stuff
-    bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
-      self$fda_ar(
-        target_time,
-        transformation = function(dens, grid) {
-          log_dens <- log(pmax(dens, 1e-12))
-          mean_log <- mean(log_dens)
-          log_dens - mean_log
-        },
-        inv_transformation = function(h, grid) {
-          f <- exp(h)
-          dx <- diff(grid)
-          dx <- c(dx, dx[length(dx)])
-          f / sum(f * dx)
-        },
-        dens_grid = dens_grid,
-        dens_mat = dens_mat
-      )
-    },
-    lqd_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+    lrq_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
       self$fda_ar(
         target_time,
         transformation = function(dens, grid) {
