@@ -174,9 +174,9 @@ DensityTimeSeries <- R6Class(
       idx <- 1
 
       for (t in times[(start_times + 1):length(times)]) {
-        result <- self$fda_ar(t, dens_mat = dens_mat)
+        ar_obj <- self$fda_ar(t, dens_mat = dens_mat)
 
-        scores[idx] <- result[[1]]
+        scores[idx] <- self$wass_dist_ar(ar_obj)
 
         idx <- idx + 1
       }
@@ -230,17 +230,27 @@ DensityTimeSeries <- R6Class(
 
       k_grid[which.min(scores)]
     },
+    # Takes an object from fda_ar
+    wass_dist_ar = function(obj) {
+      # Sometimes pdf_forecast is less than zero, which is problematic
+      wass_dist(
+        self$get_quant(obj$target_time),
+        dens2quantile(
+          matrix(ifelse(obj$forecast_pdf < 0, 0, obj$forecast_pdf), nrow = 1),
+          obj$forecast_dens$mean$x,
+          self$quant_grid
+        ),
+        self$quant_grid
+      )
+    },
     # Predicts the target year using a model built from all years prior
     # Uses a naive FPCA approach
     fda_ar = function(target_time,
-                      transformation = \(x, y) x,
-                      inv_transformation = \(x, y) x,
                       dens_grid = self$dens_grid,
                       dens_mat = self$dens_mat) {
-      dens_mat_bayes <- transformation(dens_mat, dens_grid)
       dens_fts <- fts(
         dens_grid,
-        dens_mat_bayes[, which(as.numeric(colnames(dens_mat)) < target_time)]
+        dens_mat[, which(as.numeric(colnames(dens_mat)) < target_time)]
       )
       dens_ftsm <- ftsm(dens_fts, order = 3)
       # Not sure if this is AR(1) or some other model
@@ -251,22 +261,15 @@ DensityTimeSeries <- R6Class(
         h = 1,
         max.p = 1, max.d = 0, max.q = 0
       )
-      forecast_bayes <- forecast_dens$mean$y[, 1]
+      forecast_pdf <- forecast_dens$mean$y[, 1]
 
-      forecast_pdf <- inv_transformation(forecast_bayes, dens_grid)
-
-      # Sometimes pdf_forecast is less than zero, which is problematic
-      wasserstein_dist <- wass_dist(
-        self$get_quant(target_time),
-        dens2quantile(
-          matrix(ifelse(forecast_pdf < 0, 0, forecast_pdf), nrow = 1),
-          forecast_dens$mean$x,
-          self$quant_grid
-        ),
-        self$quant_grid
+      list(
+        target_time = target_time,
+        dens_grid = dens_grid,
+        dens_mat = dens_mat,
+        forecast_pdf = forecast_pdf,
+        forecast_dens = forecast_dens
       )
-
-      list(wasserstein_dist, forecast_dens)
     },
     # Predicts the target year using a model built from all years prior
     # Uses WARp model
@@ -294,40 +297,45 @@ DensityTimeSeries <- R6Class(
     },
     # Bayes Space stuff
     bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
-      self$fda_ar(
+      # Transformation
+      log_dens <- log(pmax(dens_mat, 1e-12))
+      mean_log <- mean(log_dens)
+      dens_mat <- log_dens - mean_log
+
+      ar_obj <- self$fda_ar(
         target_time,
-        transformation = function(dens, grid) {
-          log_dens <- log(pmax(dens, 1e-12))
-          mean_log <- mean(log_dens)
-          log_dens - mean_log
-        },
-        inv_transformation = function(h, grid) {
-          f <- exp(h)
-          dx <- diff(grid)
-          dx <- c(dx, dx[length(dx)])
-          f / sum(f * dx)
-        },
         dens_grid = dens_grid,
         dens_mat = dens_mat
       )
+
+      # Inverse transformation
+      f <- exp(ar_obj$forecast_pdf)
+      dx <- diff(dens_grid)
+      dx <- c(dx, dx[length(dx)])
+      ar_obj$forecast_pdf <- f / sum(f * dx)
+
+      ar_obj
     },
     lrq_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
-      self$fda_ar(
+      # Transformation
+      log_dens <- log(pmax(dens_mat, 1e-12))
+      mean_log <- mean(log_dens)
+      dens_mat_bayes <- log_dens - mean_log
+
+      ar_obj <- self$fda_ar(
         target_time,
-        transformation = function(dens, grid) {
-          log_dens <- log(pmax(dens, 1e-12))
-          mean_log <- mean(log_dens)
-          log_dens - mean_log
-        },
-        inv_transformation = function(h, grid) {
-          f <- exp(h)
-          dx <- diff(grid)
-          dx <- c(dx, dx[length(dx)])
-          f / sum(f * dx)
-        },
+        dens_mat_bayes = dens_mat_bayes,
         dens_grid = dens_grid,
         dens_mat = dens_mat
       )
+
+      # Inverse transformation
+      f <- exp(ar_obj$forecast_bayes)
+      dx <- diff(dens_grid)
+      dx <- c(dx, dx[length(dx)])
+      ar_obj$forecast_pdf <- f / sum(f * dx)
+
+      ar_obj
     }
   ),
   private = list()

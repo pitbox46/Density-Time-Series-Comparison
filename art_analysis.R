@@ -39,10 +39,13 @@ analysis_obj$create_dens_knn(k)
 
 test_model <- function(times, func, ...) {
   ar_fits <- lapply(times, func, ...)
-  ar_distances <- sapply(ar_fits, function(x) x[[1]])
+  ar_distances <- sapply(ar_fits, function(x) analysis_obj$wass_dist_ar(x))
   mean(ar_distances)
 }
 
 test_model(20:40, analysis_obj$fda_ar)
-test_model(20:40, analysis_obj$wasserstein_ar, order = 1)
 test_model(20:40, analysis_obj$bayes_ar)
+mean(sapply(20:40, function(x) {
+  ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
+  ar_obj[[1]]
+}))

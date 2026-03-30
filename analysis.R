@@ -64,9 +64,19 @@ test_model <- function(times, func, ...) {
   mean(ar_distances)
 }
 
-test_model(2010:2024, analysis_obj$fda_ar)
-test_model(2010:2024, analysis_obj$wasserstein_ar, order = 1)
-test_model(2010:2024, analysis_obj$bayes_ar)
+times <- 2010:2024
+test_model <- function(times, func, ...) {
+  ar_fits <- lapply(times, func, ...)
+  ar_distances <- sapply(ar_fits, function(x) analysis_obj$wass_dist_ar(x))
+  mean(ar_distances)
+}
+
+test_model(times, analysis_obj$fda_ar)
+test_model(times, analysis_obj$bayes_ar)
+mean(sapply(times, function(x) {
+  ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
+  ar_obj[[1]]
+}))
 
 # Random Plots
 
