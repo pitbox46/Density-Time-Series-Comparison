@@ -73,6 +73,7 @@ test_model <- function(times, func, ...) {
 
 test_model(times, analysis_obj$fda_ar)
 test_model(times, analysis_obj$bayes_ar)
+test_model(times, analysis_obj$lqd_ar)
 mean(sapply(times, function(x) {
   ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
   ar_obj[[1]]

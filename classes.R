@@ -316,24 +316,57 @@ DensityTimeSeries <- R6Class(
 
       ar_obj
     },
-    lrq_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
-      # Transformation
-      log_dens <- log(pmax(dens_mat, 1e-12))
-      mean_log <- mean(log_dens)
-      dens_mat_bayes <- log_dens - mean_log
+    lqd_ar = function(target_time,
+                      dens_grid = self$dens_grid,
+                      dens_mat = self$dens_mat) {
+      idx <- which(as.numeric(colnames(dens_mat)) < target_time)
 
+      # Transform
+      lqd_mat <- sapply(idx, function(j) {
+        dens_at_q <- approx(
+          dens_grid,
+          pmax(dens_mat[, j], 1e-12),
+          xout = self$quant_mat[, j],
+          rule = 2
+        )$y
+
+        -log(pmax(dens_at_q, 1e-12))
+      })
+
+      colnames(lqd_mat) <- colnames(dens_mat)[idx]
+
+      # ---- FPCA ----
       ar_obj <- self$fda_ar(
         target_time,
-        dens_mat_bayes = dens_mat_bayes,
-        dens_grid = dens_grid,
-        dens_mat = dens_mat
+        dens_grid = self$quant_grid,
+        dens_mat = lqd_mat
       )
 
-      # Inverse transformation
-      f <- exp(ar_obj$forecast_bayes)
+      g <- ar_obj$forecast_pdf
+
+      # Inverse transform
+      q <- exp(g)
+      dt <- diff(self$quant_grid)
+
+      Q <- cumsum(c(0, dt * (head(q, -1) + tail(q, -1)) / 2))
+
+      # shift using median (anchor)
+      anchor_idx <- which.min(abs(self$quant_grid - 0.5))
+      Q <- Q - Q[anchor_idx] + self$quant_mat[anchor_idx, idx[length(idx)]]
+
+      # convert back to density
+      F <- approx(Q, self$quant_grid, xout = dens_grid, rule = 2)$y
+      qF <- approx(self$quant_grid, q, xout = F, rule = 2)$y
+
+      f <- 1 / pmax(qF, 1e-12)
+
+      # normalize
       dx <- diff(dens_grid)
       dx <- c(dx, dx[length(dx)])
       ar_obj$forecast_pdf <- f / sum(f * dx)
+
+      # fix grid for wass_dist_ar
+      ar_obj$forecast_dens$mean$x <- dens_grid
 
       ar_obj
     }
