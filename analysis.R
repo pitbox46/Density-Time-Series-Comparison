@@ -40,44 +40,54 @@ cps <- import_cps(load_file = TRUE, years = NA)
 
 cps$ptotval <- cps$ptotval + runif(length(cps$ptotval), -10, 10)
 
+colnames(cps) <- c("x", "weights", "time")
+
 # Initialize
-source("classes.R")
-analysis_obj <- DensityTimeSeries$new(cps$ptotval, cps$Year, cps$a_ernlwt)
+create_analaysis_obj <- function(data) {
+  source("classes.R")
+  analysis_obj <- DensityTimeSeries$new(
+    data$x,
+    data$time,
+    data$weights
+  )
 
-# If n=4096, we get errors from dens2quantile.
-# Presumably this is due to numerical precison issues
-analysis_obj$create_dens_grid(n = 1024)
+  # If n=4096, we get errors from dens2quantile.
+  # Presumably this is due to numerical precison issues
+  analysis_obj$create_dens_grid(n = 1024)
 
-# getBinnedData in fdapace starts binning data if we
-# make this increment too small.
-analysis_obj$create_quants(seq(0, 1, 0.01))
+  # getBinnedData in fdapace starts binning data if we
+  # make this increment too small.
+  analysis_obj$create_quants(seq(0, 1, 0.01))
 
-# KNN bandwidths
-k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+  # KNN bandwidths
+  k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
 
-analysis_obj$create_dens_knn(k)
-
-# Function to test models
-test_model <- function(times, func, ...) {
-  ar_fits <- lapply(times, func, ...)
-  ar_distances <- sapply(ar_fits, function(x) x[[1]])
-  mean(ar_distances)
+  analysis_obj$create_dens_knn(k)
+  analysis_obj
 }
 
-times <- 2010:2024
+analysis_obj <- create_analaysis_obj(cps)
+
+# Function to test models
 test_model <- function(times, func, ...) {
   ar_fits <- lapply(times, func, ...)
   ar_distances <- sapply(ar_fits, function(x) analysis_obj$wass_dist_ar(x))
   mean(ar_distances)
 }
 
-test_model(times, analysis_obj$fda_ar)
-test_model(times, analysis_obj$bayes_ar)
-test_model(times, analysis_obj$lqd_ar)
-mean(sapply(times, function(x) {
-  ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
-  ar_obj[[1]]
-}))
+test_all_models <- function(times, obj) {
+  c(
+    "FDA" = test_model(times, analysis_obj$fda_ar),
+    "Bayes" = test_model(times, analysis_obj$bayes_ar),
+    "LQD" = test_model(times, analysis_obj$lqd_ar),
+    "Wasserstein" = mean(sapply(times, function(x) {
+      ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
+      ar_obj[[1]]
+    }))
+  )
+}
+
+test_all_models(2010:2024, analysis_obj)
 
 # Random Plots
 
