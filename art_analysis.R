@@ -41,6 +41,27 @@ create_data_log <- function(n = 1000, mu = 10, times = 40) {
   data
 }
 
+create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
+  data <- data.frame(
+    x = runif(n, a, b),
+    weights = 1,
+    time = 1
+  )
+
+  for (i in 1:(times - 1)) {
+    a <- a * 1.05 + rnorm(1, 0, 0.10)
+    b <- b * 1.05 + rnorm(1, 0, 0.10)
+    new_data <- data.frame(
+      x = runif(n, a, b),
+      weights = 1,
+      time = i + 1
+    )
+    data <- rbind(data, new_data)
+  }
+
+  data
+}
+
 create_analaysis_obj <- function(data) {
   analysis_obj <- DensityTimeSeries$new(
     data$x,
@@ -88,5 +109,9 @@ analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
 
 data <- create_data_norm()
+analysis_obj <- create_analaysis_obj(data)
+test_all_models(20:40, analysis_obj)
+
+data <- create_data_unif()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
