@@ -1,24 +1,44 @@
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 
-create_data <- function(n = 1000, mu = 10, times = 40) {
-  log_data <- data.frame(
-    x = rlnorm(n, mu, 2),
+create_data_norm <- function(n = 1000, mu = 0, times = 40) {
+  data <- data.frame(
+    x = rnorm(n, mu, 1),
+    weights = 1,
+    time = 1
+  )
+
+  for (i in 1:(times - 1)) {
+    mu <- c(mu, mu[i] * 1.05 + rnorm(1, 0, 0.10))
+    new_data <- data.frame(
+      x = rnorm(n, mu[i + 1], 1),
+      weights = 1,
+      time = i + 1
+    )
+    data <- rbind(data, new_data)
+  }
+
+  data
+}
+
+create_data_log <- function(n = 1000, mu = 10, times = 40) {
+  data <- data.frame(
+    x = rlnorm(n, mu, 1),
     weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
     time = 1
   )
 
   for (i in 1:(times - 1)) {
     mu <- c(mu, mu[i] * 0.98 + rnorm(1, 0, 0.01))
-    new_log_data <- data.frame(
+    new_data <- data.frame(
       x = rlnorm(n, mu[i + 1], 1),
       weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
       time = i + 1
     )
-    log_data <- rbind(log_data, new_log_data)
+    data <- rbind(data, new_data)
   }
 
-  log_data
+  data
 }
 
 create_analaysis_obj <- function(data) {
@@ -43,9 +63,6 @@ create_analaysis_obj <- function(data) {
   analysis_obj
 }
 
-log_data <- create_data()
-analysis_obj <- create_analaysis_obj(log_data)
-
 # Function to test models
 test_model <- function(times, func, ...) {
   ar_fits <- lapply(times, func, ...)
@@ -65,4 +82,11 @@ test_all_models <- function(times, obj) {
   )
 }
 
+# Log data
+data <- create_data_log()
+analysis_obj <- create_analaysis_obj(data)
+test_all_models(20:40, analysis_obj)
+
+data <- create_data_norm()
+analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
