@@ -13,7 +13,7 @@ THREADS <- 16
 
 # A mask for the approx() function
 cdf2quant <- function(cdf, cdf_grid, quant_grid) {
-  approx(cdf, cdf_grid, quant_grid)
+  suppressWarnings(approx(cdf, cdf_grid, quant_grid))
 }
 
 wass_dist <- function(quant1, quant2, quant_grid) {
@@ -235,11 +235,11 @@ DensityTimeSeries <- R6Class(
       # Sometimes pdf_forecast is less than zero, which is problematic
       wass_dist(
         self$get_quant(obj$target_time),
-        dens2quantile(
+        suppressWarnings(dens2quantile(
           matrix(ifelse(obj$forecast_pdf < 0, 0, obj$forecast_pdf), nrow = 1),
           obj$forecast_dens$mean$x,
           self$quant_grid
-        ),
+        )),
         self$quant_grid
       )
     },
