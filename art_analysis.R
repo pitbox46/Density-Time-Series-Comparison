@@ -77,7 +77,7 @@ create_analaysis_obj <- function(data) {
   # make this increment too small.
   analysis_obj$create_quants(seq(0, 1, 0.01))
 
-  k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+  k <- analysis_obj$select_knn_bandwidth(16, verbose = FALSE)
 
   analysis_obj$create_dens_knn(k)
 
