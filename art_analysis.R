@@ -1,67 +1,6 @@
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 
-create_data_norm <- function(n = 1000, mu = 0, times = 40) {
-  data <- data.frame(
-    x = rnorm(n, mu, 1),
-    weights = 1,
-    time = 1
-  )
-
-  for (i in 1:(times - 1)) {
-    mu <- c(mu, mu[i] * 1.05 + rnorm(1, 0, 0.10))
-    new_data <- data.frame(
-      x = rnorm(n, mu[i + 1], 1),
-      weights = 1,
-      time = i + 1
-    )
-    data <- rbind(data, new_data)
-  }
-
-  data
-}
-
-create_data_log <- function(n = 1000, mu = 10, times = 40) {
-  data <- data.frame(
-    x = rlnorm(n, mu, 1),
-    weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
-    time = 1
-  )
-
-  for (i in 1:(times - 1)) {
-    mu <- c(mu, mu[i] * 0.98 + rnorm(1, 0, 0.01))
-    new_data <- data.frame(
-      x = rlnorm(n, mu[i + 1], 1),
-      weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
-      time = i + 1
-    )
-    data <- rbind(data, new_data)
-  }
-
-  data
-}
-
-create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
-  data <- data.frame(
-    x = runif(n, a, b),
-    weights = 1,
-    time = 1
-  )
-
-  for (i in 1:(times - 1)) {
-    a <- a * 1.05 + rnorm(1, 0, 0.10)
-    b <- b * 1.05 + rnorm(1, 0, 0.10)
-    new_data <- data.frame(
-      x = runif(n, a, b),
-      weights = 1,
-      time = i + 1
-    )
-    data <- rbind(data, new_data)
-  }
-
-  data
-}
-
 create_analaysis_obj <- function(data) {
   analysis_obj <- DensityTimeSeries$new(
     data$x,
@@ -96,22 +35,83 @@ test_all_models <- function(times, obj) {
     "FDA" = test_model(times, analysis_obj$fda_ar),
     "Bayes" = test_model(times, analysis_obj$bayes_ar),
     "LQD" = test_model(times, analysis_obj$lqd_ar),
-    "Wasserstein" = mean(sapply(times, function(x) {
-      ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
-      ar_obj[[1]]
-    }))
+    "Wasserstein" = test_model(times, analysis_obj$wasserstein_ar)
   )
 }
 
+source("plot.R")
+
 # Log data
+create_data_log <- function(n = 1000, mu = 10, times = 40) {
+  data <- data.frame(
+    x = rlnorm(n, mu, 1),
+    weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
+    time = 1
+  )
+
+  for (i in 1:(times - 1)) {
+    mu <- c(mu, mu[i] * 0.98 + rnorm(1, 0, 0.01))
+    new_data <- data.frame(
+      x = rlnorm(n, mu[i + 1], 1),
+      weights = rlnorm(n, 2, 0.5) * rbinom(n, 1, 0.5),
+      time = i + 1
+    )
+    data <- rbind(data, new_data)
+  }
+
+  data
+}
 data <- create_data_log()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
+plot_density_evolution(analysis_obj)
+plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$bayes_ar, log_scale = TRUE)
 
+create_data_norm <- function(n = 1000, mu = 0, times = 40) {
+  data <- data.frame(
+    x = rnorm(n, mu, 1),
+    weights = 1,
+    time = 1
+  )
+
+  for (i in 1:(times - 1)) {
+    mu <- c(mu, mu[i] * 1.05 + rnorm(1, 0, 0.10))
+    new_data <- data.frame(
+      x = rnorm(n, mu[i + 1], 1),
+      weights = 1,
+      time = i + 1
+    )
+    data <- rbind(data, new_data)
+  }
+
+  data
+}
 data <- create_data_norm()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
+plot_density_evolution(analysis_obj)
 
+create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
+  data <- data.frame(
+    x = runif(n, a, b),
+    weights = 1,
+    time = 1
+  )
+
+  for (i in 1:(times - 1)) {
+    a <- a * 1.05 + rnorm(1, 0, 0.10)
+    b <- b * 1.05 + rnorm(1, 0, 0.10)
+    new_data <- data.frame(
+      x = runif(n, a, b),
+      weights = 1,
+      time = i + 1
+    )
+    data <- rbind(data, new_data)
+  }
+
+  data
+}
 data <- create_data_unif()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
+plot_density_evolution(analysis_obj)

@@ -23,11 +23,15 @@ plot_density_evolution <- function(analysis_obj, title_suffix = "") {
 }
 
 # 2. Compare Actual vs Predicted Density for a specific time step
-plot_actual_vs_predicted <- function(analysis_obj, target_time, model_func, model_name = "Model") {
+plot_actual_vs_predicted <- function(analysis_obj, target_time, model_func, model_name = "Model", log_scale = FALSE) {
   # Get the forecast object
   ar_obj <- model_func(target_time)
 
-  grid <- ar_obj$dens_grid
+  if (log_scale) {
+    grid <- log(ar_obj$dens_grid)
+  } else {
+    grid <- ar_obj$dens_grid
+  }
   predicted_pdf <- ar_obj$forecast_pdf
 
   # Get actual density from the matrix (requires column names to be time values)
@@ -47,7 +51,7 @@ plot_actual_vs_predicted <- function(analysis_obj, target_time, model_func, mode
     theme_minimal() +
     labs(
       title = sprintf("%s: Actual vs Predicted Density (t = %s)", model_name, target_time),
-      x = "Value", y = "Density"
+      x = ifelse(log_scale, "Log Value", "Value"), y = "Density"
     )
 }
 
