@@ -273,27 +273,42 @@ DensityTimeSeries <- R6Class(
     },
     # Predicts the target year using a model built from all years prior
     # Uses WARp model
-    wasserstein_ar = function(target_time, order) {
+    wasserstein_ar = function(target_time, order = 1, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+      # Fit the WARp model
       data_WAR1 <- WARp(
         self$quant_mat[, which(colnames(self$quant_mat) < target_time)],
         self$quant_grid,
         order
       )
-      forecast_war <- predict(data_WAR1, self$dens_grid, self$dens_grid)
 
-      forecast_quant <- cdf2quant(
-        forecast_war$pred.cdf,
-        self$dens_grid[-length(self$dens_grid)],
-        self$quant_grid
+      # Predict on the density grid
+      forecast_war <- predict(data_WAR1, dens_grid, dens_grid)
+
+      # Extract the predicted density from the WARp predict output
+      forecast_pdf <- as.numeric(forecast_war$pred.pdf)
+      forecast_pdf <- c(0, forecast_pdf)
+
+      # Ensure non-negativity and normalize it to integrate to 1
+      forecast_pdf <- pmax(forecast_pdf, 1e-12)
+      dx <- diff(dens_grid)
+      dx <- c(dx, dx[length(dx)])
+      forecast_pdf <- forecast_pdf / sum(forecast_pdf * dx)
+
+      # Mock the forecast_dens structure so wass_dist_ar() can successfully
+      # access obj$forecast_dens$mean$x
+      forecast_dens <- list(
+        mean = list(
+          x = dens_grid
+        )
       )
 
-      wasserstein_dist <- wass_dist(
-        self$get_quant(target_time),
-        forecast_quant$y,
-        self$quant_grid
+      list(
+        target_time = target_time,
+        dens_grid = dens_grid,
+        dens_mat = dens_mat,
+        forecast_pdf = forecast_pdf,
+        forecast_dens = forecast_dens
       )
-
-      list(wasserstein_dist, forecast_quant)
     },
     # Bayes Space stuff
     bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
