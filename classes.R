@@ -83,17 +83,23 @@ DensityTimeSeries <- R6Class(
       self$times <- as.numeric(names(self$data_split))
     },
     # Creates a grid for KDE evaultion based on the quanitiles of all data
-    create_dens_grid = function(n) {
-      self$dens_grid <- Hmisc::wtd.quantile(
+    create_dens_grid = function(n, sd_multiplier = 4) {
+      base_grid <- Hmisc::wtd.quantile(
         self$data$x,
         weights = self$data$weights,
-        probs = seq(0, 1, length.out = n - 2)
+        probs = seq(0, 1, length.out = n)
       )
-      self$dens_grid <- c(
-        min(self$dens_grid) - 3,
-        self$dens_grid,
-        max(self$dens_grid) + 3
-      )
+
+      pad_amt <- sd_multiplier * sd(self$data$x)
+
+      # Find the largest distance between any two quantiles
+      max_step <- max(diff(base_grid))
+
+      # Generate the padded tails using the sparse maximum step
+      left_tail <- seq(min(base_grid) - pad_amt, min(base_grid) - max_step, by = max_step)
+      right_tail <- seq(max(base_grid) + max_step, max(base_grid) + pad_amt, by = max_step)
+
+      self$dens_grid <- unname(c(left_tail, base_grid, right_tail))
     },
     # A normal density is non-zero everywhere, but that means we must compute
     # several values which are essentially zero.

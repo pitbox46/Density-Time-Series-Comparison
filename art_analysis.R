@@ -65,7 +65,7 @@ data <- create_data_log()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
 plot_quantile_evolution(analysis_obj)
-plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$wasserstein_ar, log_scale = TRUE)
+plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$bayes_ar)
 
 create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data <- data.frame(
@@ -90,6 +90,7 @@ data <- create_data_norm()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
 plot_quantile_evolution(analysis_obj)
+plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$bayes_ar)
 
 create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data <- data.frame(
@@ -115,3 +116,4 @@ data <- create_data_unif()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
 plot_quantile_evolution(analysis_obj)
+plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$bayes_ar)
