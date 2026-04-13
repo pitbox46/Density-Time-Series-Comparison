@@ -82,25 +82,41 @@ DensityTimeSeries <- R6Class(
       self$data_split <- split(self$data, self$data$time)
       self$times <- as.numeric(names(self$data_split))
     },
-    # Creates a grid for KDE evaultion based on the quanitiles of all data
-    create_dens_grid = function(n, sd_multiplier = 4) {
+    # Creates a grid for KDE evaluation based on the quantiles of all data,
+    # enforcing a maximum distance between adjacent points.
+    create_dens_grid = function(n, sd_multiplier = 4, max_gap = NULL) {
       base_grid <- Hmisc::wtd.quantile(
         self$data$x,
         weights = self$data$weights,
         probs = seq(0, 1, length.out = n)
       )
 
+      # Default max_gap to a fraction of standard deviation if not provided
+      if (is.null(max_gap)) {
+        max_gap <- sd(self$data$x) / 4
+      }
+
+      # 1. Fill sparse gaps in the quantile grid
+      diffs <- diff(base_grid)
+      inserts <- pmax(1, ceiling(diffs / max_gap))
+
+      base_grid <- unlist(lapply(1:(length(base_grid) - 1), function(i) {
+        # Generate sequence and drop the last point to avoid duplicates
+        seq(base_grid[i], base_grid[i + 1], length.out = inserts[i] + 1)[-(inserts[i] + 1)]
+      }))
+
+      # Append the final boundary point
+      base_grid <- c(base_grid, max(self$data$x))
+
+      # 2. Tail padding
       pad_amt <- sd_multiplier * sd(self$data$x)
 
-      # Find the largest distance between any two quantiles
-      avg_step <- mean(diff(base_grid))
+      # Use the smaller of the average step or max_gap for the tails
+      tail_step <- max_gap
+      pad_amt <- max(pad_amt, tail_step)
 
-      # SAFETY CATCH: Ensure padding is at least one step wide
-      pad_amt <- max(pad_amt, avg_step)
-
-      # Generate the padded tails using the sparse maximum step
-      left_tail <- seq(min(base_grid) - pad_amt, min(base_grid) - avg_step, by = avg_step)
-      right_tail <- seq(max(base_grid) + avg_step, max(base_grid) + pad_amt, by = avg_step)
+      left_tail <- seq(min(base_grid) - pad_amt, min(base_grid) - tail_step, by = tail_step)
+      right_tail <- seq(max(base_grid) + tail_step, max(base_grid) + pad_amt, by = tail_step)
 
       self$dens_grid <- unname(c(left_tail, base_grid, right_tail))
     },
@@ -163,9 +179,9 @@ DensityTimeSeries <- R6Class(
       }
     },
     # KNN selection stuff
-    compute_k_grid = function(length.out = 16) {
+    compute_k_grid = function(length.out = 16, lower_mul = 1 / 4, upper_mul = 1) {
       sqrt_n_avg <- nrow(self$data) / length(self$times)
-      round(seq(sqrt_n_avg / 4, sqrt_n_avg, length.out = length.out))
+      round(seq(sqrt_n_avg * lower_mul, sqrt_n_avg * upper_mul, length.out = length.out))
     },
     compute_knn = function(data_split, k_grid) {
       mclapply(data_split, function(xx) {
@@ -195,8 +211,9 @@ DensityTimeSeries <- R6Class(
     select_knn_bandwidth = function(k_grid_length,
                                     start_times = 5,
                                     cutoff = 6,
-                                    verbose = FALSE) {
-      k_grid <- self$compute_k_grid(k_grid_length)
+                                    verbose = FALSE,
+                                    ...) {
+      k_grid <- self$compute_k_grid(k_grid_length, ...)
       data_split <- self$data_split
       times <- self$times
 
