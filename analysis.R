@@ -66,7 +66,6 @@ create_analaysis_obj <- function(data) {
   analysis_obj
 }
 
-analysis_obj <- create_analaysis_obj(cps)
 
 # Function to test models
 test_model <- function(times, func, ...) {
@@ -80,16 +79,33 @@ test_all_models <- function(times, obj) {
     "FDA" = test_model(times, analysis_obj$fda_ar),
     "Bayes" = test_model(times, analysis_obj$bayes_ar),
     "LQD" = test_model(times, analysis_obj$lqd_ar),
-    "Wasserstein" = mean(sapply(times, function(x) {
-      ar_obj <- analysis_obj$wasserstein_ar(x, order = 1)
-      ar_obj[[1]]
-    }))
+    "Wasserstein" = test_model(times, analysis_obj$wasserstein_ar)
   )
 }
 
+source("plot.R")
+
+analysis_obj <- create_analaysis_obj(cps)
 test_all_models(2010:2024, analysis_obj)
 
-# Random Plots
+models <- list(
+  "FDA" = analysis_obj$fda_ar,
+  "Bayes" = analysis_obj$bayes_ar,
+  "LQD" = analysis_obj$lqd_ar,
+  "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
+)
 
-plot(analysis_obj$dens_grid, analysis_obj$dens_mat[, 1], type = "l")
-plot(FDA_AR_fits[[1]][[2]]$mean$x, FDA_AR_fits[[1]][[2]]$mean$y)
+bayes_obj <- analysis_obj$bayes_ar(2024)
+plot(density(subset(data, time == 2023)$x))
+hist(subset(data, time == 2023)$x, freq = FALSE, breaks = 30)
+points(analysis_obj$dens_grid, analysis_obj$dens_mat[, 2023])
+lines(bayes_obj$forecast_dens$mean$x, bayes_obj$forecast_pdf)
+
+# Generate static plot for timestep 40
+plot_all_models_vs_actual(analysis_obj, 40, models)
+
+# Generate animation for timesteps 20 through 40
+anim <- animate_all_models(analysis_obj, 20:40, models)
+
+# Render the animation (adjust frames/fps as needed for execution speed)
+animate(anim, nframes = 100, fps = 10, width = 800, height = 600)
