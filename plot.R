@@ -8,8 +8,7 @@ library(gganimate)
 get_predicted_quantiles <- function(analysis_obj, target_time, model_func) {
   ar_obj <- model_func(target_time)
 
-  # Pull grid directly from analysis_obj to guarantee length matches forecast_pdf
-  grid <- analysis_obj$dens_grid
+  grid <- ar_obj$forecast_dens$mean$x
   predicted_pdf <- ar_obj$forecast_pdf
 
   # Convert predicted PDF to CDF
@@ -40,9 +39,6 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, lo
   }
 
   df_melt <- melt(df, id.vars = "Probability", variable.name = "Model", value.name = "Value")
-
-  # Define custom aesthetics to make 'Actual' stand out
-  is_actual <- df_melt$Model == "Actual"
 
   ggplot(df_melt, aes(x = Probability, y = Value, color = Model, group = Model)) +
     geom_line(aes(linewidth = Model == "Actual", linetype = Model == "Actual")) +

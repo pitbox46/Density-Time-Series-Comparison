@@ -1,7 +1,7 @@
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 
-create_analaysis_obj <- function(data) {
+create_analaysis_obj <- function(data, ...) {
   analysis_obj <- DensityTimeSeries$new(
     data$x,
     data$time,
@@ -16,7 +16,7 @@ create_analaysis_obj <- function(data) {
   # make this increment too small.
   analysis_obj$create_quants(seq(0, 1, 0.01))
 
-  k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+  k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE, ...)
 
   analysis_obj$create_dens_knn(k)
 
@@ -72,20 +72,9 @@ data <- create_data_log()
 analysis_obj <- create_analaysis_obj(data)
 test_all_models(20:40, analysis_obj)
 
-
-bayes_obj <- analysis_obj$bayes_ar(40)
-plot(density(subset(data, time == 39)$x))
-points(analysis_obj$dens_grid, analysis_obj$dens_mat[, 39])
-lines(bayes_obj$forecast_dens$mean$x, bayes_obj$forecast_pdf)
-
-# Generate static plot for timestep 40
 plot_all_models_vs_actual(analysis_obj, 40, models)
-
-# Generate animation for timesteps 20 through 40
 anim <- animate_all_models(analysis_obj, 20:40, models)
-
-# Render the animation (adjust frames/fps as needed for execution speed)
-animate(anim, nframes = 100, fps = 10, width = 800, height = 600)
+animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
 
 create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data <- data.frame(
@@ -107,17 +96,15 @@ create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data
 }
 data <- create_data_norm()
-analysis_obj <- create_analaysis_obj(data)
+analysis_obj <- create_analaysis_obj(data, lower_mul = 1 / 50, upper_mul = 1 / 2)
 test_all_models(20:40, analysis_obj)
 
 # Generate static plot for timestep 40
 plot_all_models_vs_actual(analysis_obj, 40, models)
-
 # Generate animation for timesteps 20 through 40
 anim <- animate_all_models(analysis_obj, 20:40, models)
-
 # Render the animation (adjust frames/fps as needed for execution speed)
-animate(anim, nframes = 100, fps = 10, width = 800, height = 600)
+animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
 
 create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data <- data.frame(
@@ -140,7 +127,12 @@ create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data
 }
 data <- create_data_unif()
-analysis_obj <- create_analaysis_obj(data)
+analysis_obj <- create_analaysis_obj(data, lower_mul = 1 / 20, upper_mul = 1 / 2)
 test_all_models(20:40, analysis_obj)
-plot_quantile_evolution(analysis_obj)
-plot_actual_vs_predicted(analysis_obj, 40, analysis_obj$bayes_ar)
+
+# Generate static plot for timestep 40
+plot_all_models_vs_actual(analysis_obj, 40, models)
+# Generate animation for timesteps 20 through 40
+anim <- animate_all_models(analysis_obj, 20:40, models)
+# Render the animation (adjust frames/fps as needed for execution speed)
+animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
