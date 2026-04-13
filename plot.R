@@ -2,76 +2,100 @@ library(ggplot2)
 library(reshape2)
 library(viridis)
 
-# 1. Visualize the evolution of the density distributions over time
-plot_density_evolution <- function(analysis_obj, title_suffix = "") {
-  dens_mat <- analysis_obj$dens_mat
-  grid <- analysis_obj$dens_grid
+# 1. Visualize the evolution of the quantile functions over time
+plot_quantile_evolution <- function(analysis_obj, title_suffix = "") {
+  quant_mat <- analysis_obj$quant_mat
+  prob_grid <- analysis_obj$quant_grid
 
-  # Ensure columns are properly identified as time steps
-  df <- melt(dens_mat)
-  colnames(df) <- c("GridIndex", "Time", "Density")
-  df$x <- grid[df$GridIndex]
+  # melt() on a matrix returns Var1 (row index), Var2 (col name), and value
+  df <- melt(quant_mat)
+  colnames(df) <- c("GridIndex", "Time", "Value")
 
-  ggplot(df, aes(x = x, y = Density, group = Time, color = Time)) +
+  # Replace row indices with actual probabilities (0 to 1)
+  df$Probability <- prob_grid[df$GridIndex]
+
+  ggplot(df, aes(x = Probability, y = Value, group = Time, color = Time)) +
     geom_line(alpha = 0.7) +
     scale_color_viridis(option = "plasma") +
     theme_minimal() +
     labs(
-      title = paste("Evolution of Density Over Time", title_suffix),
-      x = "Value", y = "Density"
+      title = paste("Evolution of Quantile Functions", title_suffix),
+      x = "Probability", y = "Domain Value"
     )
 }
 
-# 2. Compare Actual vs Predicted Density for a specific time step
+# 2. Compare Actual vs Predicted Quantiles for a specific time step
 plot_actual_vs_predicted <- function(analysis_obj, target_time, model_func, model_name = "Model", log_scale = FALSE) {
-  # Get the forecast object
-  ar_obj <- model_func(target_time)
+  # Get actual quantiles from the matrix
+  actual_quant <- analysis_obj$quant_mat[, as.character(target_time)]
+  prob_grid <- analysis_obj$quant_grid
 
-  if (log_scale) {
-    grid <- log(ar_obj$dens_grid)
-  } else {
-    grid <- ar_obj$dens_grid
-  }
+  # Get the forecast object (PDF)
+  ar_obj <- model_func(target_time)
+  grid <- ar_obj$dens_grid
   predicted_pdf <- ar_obj$forecast_pdf
 
-  # Get actual density from the matrix (requires column names to be time values)
-  actual_pdf <- analysis_obj$dens_mat[, as.character(target_time)]
+  # Numerically integrate PDF to get CDF
+  dx <- diff(grid)
+  dx <- c(dx, dx[length(dx)])
+  predicted_cdf <- cumsum(predicted_pdf * dx)
+  predicted_cdf <- predicted_cdf / tail(predicted_cdf, 1) # Ensure max is exactly 1
+
+  # Interpolate to find predicted quantiles at the exact probability grid points
+  predicted_quant <- approx(x = predicted_cdf, y = grid, xout = prob_grid, rule = 2)$y
+
+  if (log_scale) {
+    actual_quant <- log(actual_quant)
+    predicted_quant <- log(predicted_quant)
+  }
 
   df <- data.frame(
-    x = grid,
-    Actual = actual_pdf,
-    Predicted = predicted_pdf
+    Probability = prob_grid,
+    Actual = actual_quant,
+    Predicted = predicted_quant
   )
 
-  df_melt <- melt(df, id.vars = "x", variable.name = "Type", value.name = "Density")
+  df_melt <- melt(df, id.vars = "Probability", variable.name = "Type", value.name = "Value")
 
-  ggplot(df_melt, aes(x = x, y = Density, color = Type, linetype = Type)) +
+  ggplot(df_melt, aes(x = Probability, y = Value, color = Type, linetype = Type)) +
     geom_line(linewidth = 1) +
     scale_color_manual(values = c("Actual" = "black", "Predicted" = "blue")) +
     theme_minimal() +
     labs(
-      title = sprintf("%s: Actual vs Predicted Density (t = %s)", model_name, target_time),
-      x = ifelse(log_scale, "Log Value", "Value"), y = "Density"
+      title = sprintf("%s: Actual vs Predicted Quantiles (t = %s)", model_name, target_time),
+      x = "Probability", y = ifelse(log_scale, "Log Value", "Value")
     )
 }
 
 # 3. Plot the residual difference (Actual - Predicted)
 plot_prediction_error <- function(analysis_obj, target_time, model_func, model_name = "Model") {
+  actual_quant <- analysis_obj$quant_mat[, as.character(target_time)]
+  prob_grid <- analysis_obj$quant_grid
+
   ar_obj <- model_func(target_time)
   grid <- ar_obj$dens_grid
-  actual_pdf <- analysis_obj$dens_mat[, as.character(target_time)]
+  predicted_pdf <- ar_obj$forecast_pdf
 
-  # Calculate residuals
-  residuals <- actual_pdf - ar_obj$forecast_pdf
+  # Convert predicted PDF to CDF
+  dx <- diff(grid)
+  dx <- c(dx, dx[length(dx)])
+  predicted_cdf <- cumsum(predicted_pdf * dx)
+  predicted_cdf <- predicted_cdf / tail(predicted_cdf, 1)
 
-  df <- data.frame(x = grid, Error = residuals)
+  # Extract predicted quantiles
+  predicted_quant <- approx(x = predicted_cdf, y = grid, xout = prob_grid, rule = 2)$y
 
-  ggplot(df, aes(x = x, y = Error)) +
+  # Calculate residuals in Wasserstein space (difference in quantiles)
+  residuals <- actual_quant - predicted_quant
+
+  df <- data.frame(Probability = prob_grid, Error = residuals)
+
+  ggplot(df, aes(x = Probability, y = Error)) +
     geom_line(color = "red", linewidth = 0.8) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
     theme_minimal() +
     labs(
-      title = sprintf("%s: Density Prediction Error (t = %s)", model_name, target_time),
-      x = "Value", y = "Actual - Predicted Density"
+      title = sprintf("%s: Quantile Prediction Error (t = %s)", model_name, target_time),
+      x = "Probability", y = "Actual - Predicted Quantile"
     )
 }
