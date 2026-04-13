@@ -93,11 +93,14 @@ DensityTimeSeries <- R6Class(
       pad_amt <- sd_multiplier * sd(self$data$x)
 
       # Find the largest distance between any two quantiles
-      max_step <- max(diff(base_grid))
+      avg_step <- mean(diff(base_grid))
+
+      # SAFETY CATCH: Ensure padding is at least one step wide
+      pad_amt <- max(pad_amt, avg_step)
 
       # Generate the padded tails using the sparse maximum step
-      left_tail <- seq(min(base_grid) - pad_amt, min(base_grid) - max_step, by = max_step)
-      right_tail <- seq(max(base_grid) + max_step, max(base_grid) + pad_amt, by = max_step)
+      left_tail <- seq(min(base_grid) - pad_amt, min(base_grid) - avg_step, by = avg_step)
+      right_tail <- seq(max(base_grid) + avg_step, max(base_grid) + pad_amt, by = avg_step)
 
       self$dens_grid <- unname(c(left_tail, base_grid, right_tail))
     },
