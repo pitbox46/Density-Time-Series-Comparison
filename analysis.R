@@ -95,10 +95,7 @@ models <- list(
   "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
 )
 
-# Generate static plot for timestep 40
 plot_all_models_vs_actual(analysis_obj, 2020, models)
 
-# Generate animation for timesteps 20 through 40
 anim <- animate_all_models(analysis_obj, 2010:2024, models, log_scale = TRUE)
-# Render the animation (adjust frames/fps as needed for execution speed)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
