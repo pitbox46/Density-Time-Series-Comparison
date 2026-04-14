@@ -13,6 +13,3 @@ LQD consistently exhibits larger tails than all other methods.
 This could be due to precision issues similar to above.
 UPDATE: This is due to the tail ends not being properly evaluated.
 They don't descend to zero.
-
-I am using a KNN bandwidth selection. This was chosen for log-normal data,
-but may not be optimal for other data types.
