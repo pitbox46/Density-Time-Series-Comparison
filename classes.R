@@ -279,7 +279,7 @@ DensityTimeSeries <- R6Class(
         dens_mat[, which(as.numeric(colnames(dens_mat)) < target_time)]
       )
       dens_ftsm <- ftsm(dens_fts, order = 3)
-      # Not sure if this is AR(1) or some other model
+      # Uses auto.arima() under the hood
       forecast_dens <- forecast(
         dens_ftsm,
         method = "arima",
