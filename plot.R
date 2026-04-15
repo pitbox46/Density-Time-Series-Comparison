@@ -55,7 +55,7 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, as
     labs(
       title = sprintf("Model Comparison (t = %s)", target_time),
       x = "Probability",
-      y = ifelse(asinh_scale, "Log Value", "Value")
+      y = ifelse(asinh_scale, "Inverse Hyperbolic Sine Value", "Value")
     )
 }
 
