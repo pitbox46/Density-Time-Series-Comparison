@@ -23,20 +23,31 @@ create_analaysis_obj <- function(data, ...) {
   analysis_obj
 }
 
+# Creates a list of models to plot with
+models_func <- function(analysis_obj) {
+  list(
+    "FDA" = function(t) analysis_obj$fda_ar(t, ensure_positive = TRUE),
+    "Bayes" = analysis_obj$bayes_ar,
+    "LQD" = analysis_obj$lqd_ar,
+    "Wasserstein" = analysis_obj$wasserstein_ar
+  )
+}
+
 # Function to test models
-test_model <- function(times, func, ...) {
-  ar_fits <- lapply(times, func, ...)
+test_model <- function(times, analysis_obj, func) {
+  ar_fits <- lapply(times, func)
   ar_distances <- sapply(ar_fits, function(x) analysis_obj$wass_dist_ar(x))
   mean(ar_distances)
 }
 
-test_all_models <- function(times, obj) {
-  c(
-    "FDA" = test_model(times, analysis_obj$fda_ar),
-    "Bayes" = test_model(times, analysis_obj$bayes_ar),
-    "LQD" = test_model(times, analysis_obj$lqd_ar),
-    "Wasserstein" = test_model(times, analysis_obj$wasserstein_ar)
-  )
+test_all_models <- function(times, analysis_obj, models) {
+  wass_dists <- numeric(length(models))
+  names(wass_dists) <- names(models)
+  for (i in seq_along(models)) {
+    wass_dists[i] <- test_model(times, analysis_obj, models[[i]])
+  }
+
+  wass_dists
 }
 
 source("plot.R")
@@ -63,13 +74,13 @@ create_data_log <- function(n = 1000, mu = 10, times = 40) {
 }
 data <- create_data_log()
 analysis_obj <- create_analaysis_obj(data)
-test_all_models(20:40, analysis_obj)
+models <- models_func(analysis_obj)
+test_all_models(20:40, analysis_obj, models)
 
-models <- list(
-  "FDA" = analysis_obj$fda_ar,
-  "Bayes" = analysis_obj$bayes_ar,
-  "LQD" = analysis_obj$lqd_ar,
-  "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
+fda_obj <- analysis_obj$fda_ar(40, ensure_positive = TRUE)
+plot(
+  fda_obj$forecast_dens$mean$x,
+  fda_obj$forecast_pdf
 )
 
 plot_all_models_vs_actual(analysis_obj, 40, models, log_scale = TRUE)

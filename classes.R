@@ -262,7 +262,7 @@ DensityTimeSeries <- R6Class(
       wass_dist(
         self$get_quant(obj$target_time),
         suppressWarnings(dens2quantile(
-          matrix(ifelse(obj$forecast_pdf < 0, 0, obj$forecast_pdf), nrow = 1),
+          matrix(pmax(0, obj$forecast_pdf), nrow = 1),
           obj$forecast_dens$mean$x,
           self$quant_grid
         )),
@@ -273,7 +273,8 @@ DensityTimeSeries <- R6Class(
     # Uses a naive FPCA approach
     fda_ar = function(target_time,
                       dens_grid = self$dens_grid,
-                      dens_mat = self$dens_mat) {
+                      dens_mat = self$dens_mat,
+                      ensure_positive = FALSE) {
       dens_fts <- fts(
         dens_grid,
         dens_mat[, which(as.numeric(colnames(dens_mat)) < target_time)]
@@ -288,6 +289,11 @@ DensityTimeSeries <- R6Class(
         max.p = 1, max.d = 0, max.q = 0
       )
       forecast_pdf <- forecast_dens$mean$y[, 1]
+
+      if (ensure_positive) {
+        # Ensures that the output PDF is positive
+        forecast_pdf <- pmax(forecast_pdf, 1e-12)
+      }
 
       list(
         target_time = target_time,
