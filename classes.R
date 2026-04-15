@@ -362,12 +362,28 @@ DensityTimeSeries <- R6Class(
                       dens_mat = self$dens_mat) {
       idx <- which(as.numeric(colnames(dens_mat)) < target_time)
 
+      # ---------------------------------------------------------
+      # DYNAMIC KDE QUANTILES: Calculate locally for LQD only
+      # ---------------------------------------------------------
+      dx <- diff(dens_grid)
+      dx <- c(dx, dx[length(dx)])
+
+      kde_quant_mat <- sapply(idx, function(j) {
+        pdf <- pmax(dens_mat[, j], 1e-12)
+        cdf <- cumsum(pdf * dx)
+        cdf <- cdf / tail(cdf, 1) # Normalize to 1
+        approx(x = cdf, y = dens_grid, xout = self$quant_grid, rule = 2)$y
+      })
+      # Note: kde_quant_mat columns now map 1-to-1 with the `idx` vector
+
       # Transform
-      lqd_mat <- sapply(idx, function(j) {
+      lqd_mat <- sapply(seq_along(idx), function(k) {
+        j <- idx[k] # The actual column index in dens_mat
+
         dens_at_q <- approx(
           dens_grid,
           pmax(dens_mat[, j], 1e-12),
-          xout = self$quant_mat[, j],
+          xout = kde_quant_mat[, k], # Use the dynamically generated KDE quantile
           rule = 2
         )$y
 
@@ -393,7 +409,8 @@ DensityTimeSeries <- R6Class(
 
       # shift using median (anchor)
       anchor_idx <- which.min(abs(self$quant_grid - 0.5))
-      Q <- Q - Q[anchor_idx] + self$quant_mat[anchor_idx, idx[length(idx)]]
+      # Use the most recent KDE quantile (the last column) to anchor
+      Q <- Q - Q[anchor_idx] + kde_quant_mat[anchor_idx, ncol(kde_quant_mat)]
 
       # convert back to density
       F <- approx(Q, self$quant_grid, xout = dens_grid, rule = 2)$y
@@ -401,13 +418,15 @@ DensityTimeSeries <- R6Class(
 
       f <- 1 / pmax(qF, 1e-12)
 
+      # Enforce zero density strictly outside of Q's bounds to prevent extrapolation flatlines
+      f[dens_grid < min(Q) | dens_grid > max(Q)] <- 1e-12
+
       # normalize
-      dx <- diff(dens_grid)
-      dx <- c(dx, dx[length(dx)])
       ar_obj$forecast_pdf <- f / sum(f * dx)
 
       # fix grid for wass_dist_ar
       ar_obj$forecast_dens$mean$x <- dens_grid
+      ar_obj$dens_grid <- dens_grid
 
       ar_obj
     }
