@@ -17,13 +17,17 @@ cdf2quant <- function(cdf, cdf_grid, quant_grid) {
 }
 
 wass_dist <- function(quant1, quant2, quant_grid) {
-  ret <- 0
-  for (i in 1:(length(quant_grid) - 1)) {
-    step <- quant_grid[i + 1] - quant_grid[i]
+  # 1. Compute the squared differences at every grid point
+  sq_diff <- (quant1 - quant2)^2
 
-    ret <- ret + (quant2[i] - quant1[i])^2 * step
-  }
-  sqrt(ret)
+  # 2. Calculate the step sizes (dp)
+  dp <- diff(quant_grid)
+
+  # 3. Integrate using the Trapezoidal Rule
+  # Area of a trapezoid = height * (left_edge + right_edge) / 2
+  integral <- sum(dp * (head(sq_diff, -1) + tail(sq_diff, -1)) / 2)
+
+  sqrt(integral)
 }
 
 # Takes a sorted x and k to get adaptive bandwidths
