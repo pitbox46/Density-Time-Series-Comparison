@@ -72,7 +72,7 @@ models <- list(
   "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
 )
 
-plot_all_models_vs_actual(analysis_obj, 40, models)
+plot_all_models_vs_actual(analysis_obj, 40, models, log_scale = TRUE)
 anim <- animate_all_models(analysis_obj, 20:40, models, log_scale = TRUE)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
 
