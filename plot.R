@@ -22,7 +22,7 @@ get_predicted_quantiles <- function(analysis_obj, target_time, model_func) {
 }
 
 # --- 1. Static Plot: All Models vs Actual ---
-plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, log_scale = FALSE) {
+plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, asinh_scale = FALSE) {
   prob_grid <- analysis_obj$quant_grid
   actual_quant <- analysis_obj$quant_mat[, as.character(target_time)]
 
@@ -34,8 +34,8 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, lo
     df[[model_name]] <- get_predicted_quantiles(analysis_obj, target_time, models_list[[model_name]])
   }
 
-  if (log_scale) {
-    df[, -1] <- log(pmax(df[, -1], 1e-12))
+  if (asinh_scale) {
+    df[, -1] <- asinh(pmax(df[, -1], 1e-12))
   }
 
   df_melt <- melt(df, id.vars = "Probability", variable.name = "Model", value.name = "Value")
@@ -55,12 +55,12 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, lo
     labs(
       title = sprintf("Model Comparison (t = %s)", target_time),
       x = "Probability",
-      y = ifelse(log_scale, "Log Value", "Value")
+      y = ifelse(asinh_scale, "Log Value", "Value")
     )
 }
 
 # --- 2. Animated Plot: Evolution Across Time ---
-animate_all_models <- function(analysis_obj, times, models_list, log_scale = FALSE) {
+animate_all_models <- function(analysis_obj, times, models_list, asinh_scale = FALSE) {
   all_dfs <- list()
 
   # Build a combined dataframe for all specified times
@@ -72,7 +72,7 @@ animate_all_models <- function(analysis_obj, times, models_list, log_scale = FAL
       df_t[[model_name]] <- get_predicted_quantiles(analysis_obj, t, models_list[[model_name]])
     }
 
-    if (log_scale) {
+    if (asinh_scale) {
       cols_to_log <- !(names(df_t) %in% c("Time", "Probability"))
       df_t[, cols_to_log] <- log(df_t[, cols_to_log])
     }
@@ -99,7 +99,7 @@ animate_all_models <- function(analysis_obj, times, models_list, log_scale = FAL
     labs(
       title = "Model Comparison (t = {frame_time})",
       x = "Probability",
-      y = ifelse(log_scale, "Log Value", "Value")
+      y = ifelse(asinh_scale, "Inverse Hyperbolic Sine Value", "Value")
     ) +
     transition_time(Time) +
     ease_aes("linear")

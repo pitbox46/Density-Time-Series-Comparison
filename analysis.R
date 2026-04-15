@@ -1,4 +1,5 @@
 options(error = function() traceback(3))
+source("plot.R")
 
 # Load data file or get the data from the CPS API
 import_cps <- function(load_file, years, data_file = "./data.RData") {
@@ -102,6 +103,6 @@ analysis_obj <- create_analaysis_obj(cps, k = NA)
 models <- models_func(analysis_obj)
 test_all_models(times_eval, analysis_obj, models)
 
-plot_all_models_vs_actual(analysis_obj, 2020, models)
-anim <- animate_all_models(analysis_obj, times_eval, models)
+plot_all_models_vs_actual(analysis_obj, 2020, models, asinh_scale = TRUE)
+anim <- animate_all_models(analysis_obj, times_eval, models, asinh_scale = TRUE)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
