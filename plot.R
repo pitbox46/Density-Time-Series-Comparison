@@ -35,7 +35,7 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, lo
   }
 
   if (log_scale) {
-    df[, -1] <- log(df[, -1])
+    df[, -1] <- log(pmax(df[, -1], 1e-12))
   }
 
   df_melt <- melt(df, id.vars = "Probability", variable.name = "Model", value.name = "Value")
