@@ -77,12 +77,6 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-fda_obj <- analysis_obj$fda_ar(40, ensure_positive = TRUE)
-plot(
-  fda_obj$forecast_dens$mean$x,
-  fda_obj$forecast_pdf
-)
-
 plot_all_models_vs_actual(analysis_obj, 40, models, log_scale = TRUE)
 anim <- animate_all_models(analysis_obj, 20:40, models, log_scale = TRUE)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
@@ -107,21 +101,12 @@ create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data
 }
 data <- create_data_norm()
-analysis_obj <- create_analaysis_obj(data, lower_mul = 1 / 50, upper_mul = 1 / 2)
-test_all_models(20:40, analysis_obj)
+analysis_obj <- create_analaysis_obj(data)
+models <- models_func(analysis_obj)
+test_all_models(20:40, analysis_obj, models)
 
-models <- list(
-  "FDA" = analysis_obj$fda_ar,
-  "Bayes" = analysis_obj$bayes_ar,
-  "LQD" = analysis_obj$lqd_ar,
-  "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
-)
-
-# Generate static plot for timestep 40
-plot_all_models_vs_actual(analysis_obj, 30, models)
-# Generate animation for timesteps 20 through 40
+plot_all_models_vs_actual(analysis_obj, 40, models)
 anim <- animate_all_models(analysis_obj, 20:40, models)
-# Render the animation (adjust frames/fps as needed for execution speed)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
 
 create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
@@ -145,19 +130,10 @@ create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data
 }
 data <- create_data_unif()
-analysis_obj <- create_analaysis_obj(data, lower_mul = 1 / 20, upper_mul = 1 / 2)
-test_all_models(20:40, analysis_obj)
+analysis_obj <- create_analaysis_obj(data)
+models <- models_func(analysis_obj)
+test_all_models(20:40, analysis_obj, models)
 
-models <- list(
-  "FDA" = analysis_obj$fda_ar,
-  "Bayes" = analysis_obj$bayes_ar,
-  "LQD" = analysis_obj$lqd_ar,
-  "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
-)
-
-# Generate static plot for timestep 40
 plot_all_models_vs_actual(analysis_obj, 40, models)
-# Generate animation for timesteps 20 through 40
 anim <- animate_all_models(analysis_obj, 20:40, models)
-# Render the animation (adjust frames/fps as needed for execution speed)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
