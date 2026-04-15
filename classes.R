@@ -183,8 +183,8 @@ DensityTimeSeries <- R6Class(
       }
     },
     # KNN selection stuff
-    compute_k_grid = function(length.out = 16, lower_mul = 1 / 4, upper_mul = 1) {
-      sqrt_n_avg <- nrow(self$data) / length(self$times)
+    compute_k_grid = function(length.out = 16, lower_mul = 1 / 4, upper_mul = 2) {
+      sqrt_n_avg <- sqrt(nrow(self$data)) / length(self$times)
       round(seq(sqrt_n_avg * lower_mul, sqrt_n_avg * upper_mul, length.out = length.out))
     },
     compute_knn = function(data_split, k_grid) {
@@ -268,7 +268,8 @@ DensityTimeSeries <- R6Class(
         suppressWarnings(dens2quantile(
           matrix(pmax(0, obj$forecast_pdf), nrow = 1),
           obj$forecast_dens$mean$x,
-          self$quant_grid
+          self$quant_grid,
+          useSplines = FALSE
         )),
         self$quant_grid
       )
