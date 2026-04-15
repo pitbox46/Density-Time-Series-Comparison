@@ -286,7 +286,7 @@ DensityTimeSeries <- R6Class(
         method = "arima",
         level = 95,
         h = 1,
-        max.p = 1, max.d = 0, max.q = 0
+        max.p = 1, max.d = 2, max.q = 0
       )
       forecast_pdf <- forecast_dens$mean$y[, 1]
 
@@ -344,10 +344,19 @@ DensityTimeSeries <- R6Class(
     },
     # Bayes Space stuff
     bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
-      # Transformation
+      # Transformation: Proper Centered Log-Ratio (CLR) per column
       log_dens <- log(pmax(dens_mat, 1e-12))
-      mean_log <- mean(log_dens)
-      dens_mat <- log_dens - mean_log
+
+      dx <- diff(dens_grid)
+      dx <- c(dx, dx[length(dx)])
+      domain_length <- sum(dx)
+
+      # Calculate the integral of the log-density for EACH time step
+      col_integrals <- apply(log_dens, 2, function(y) sum(y * dx))
+      col_means <- col_integrals / domain_length
+
+      # Sweep subtracts the corresponding mean from each column individually
+      dens_mat <- sweep(log_dens, 2, col_means, "-")
 
       ar_obj <- self$fda_ar(
         target_time,
@@ -355,10 +364,14 @@ DensityTimeSeries <- R6Class(
         dens_mat = dens_mat
       )
 
-      # Inverse transformation
-      f <- exp(ar_obj$forecast_pdf)
-      dx <- diff(dens_grid)
-      dx <- c(dx, dx[length(dx)])
+      g <- ar_obj$forecast_pdf
+
+      # Inverse transformation: Log-Sum-Exp trick for Overflow Protection
+      # Shift the log-density by its maximum before exponentiating.
+      g_shifted <- g - max(g)
+      f <- exp(g_shifted)
+
+      # normalize
       ar_obj$forecast_pdf <- f / sum(f * dx)
 
       ar_obj
