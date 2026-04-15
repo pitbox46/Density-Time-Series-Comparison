@@ -67,35 +67,39 @@ create_analaysis_obj <- function(data) {
 }
 
 
+# Creates a list of models to plot with
+models_func <- function(analysis_obj) {
+  list(
+    "FDA" = function(t) analysis_obj$fda_ar(t, ensure_positive = TRUE),
+    "Bayes" = analysis_obj$bayes_ar,
+    "LQD" = analysis_obj$lqd_ar,
+    "Wasserstein" = analysis_obj$wasserstein_ar
+  )
+}
+
 # Function to test models
-test_model <- function(times, func, ...) {
-  ar_fits <- lapply(times, func, ...)
+test_model <- function(times, analysis_obj, func) {
+  ar_fits <- lapply(times, func)
   ar_distances <- sapply(ar_fits, function(x) analysis_obj$wass_dist_ar(x))
   mean(ar_distances)
 }
 
-test_all_models <- function(times, obj) {
-  c(
-    "FDA" = test_model(times, analysis_obj$fda_ar),
-    "Bayes" = test_model(times, analysis_obj$bayes_ar),
-    "LQD" = test_model(times, analysis_obj$lqd_ar),
-    "Wasserstein" = test_model(times, analysis_obj$wasserstein_ar)
-  )
+test_all_models <- function(times, analysis_obj, models) {
+  wass_dists <- numeric(length(models))
+  names(wass_dists) <- names(models)
+  for (i in seq_along(models)) {
+    wass_dists[i] <- test_model(times, analysis_obj, models[[i]])
+  }
+
+  wass_dists
 }
 
-source("plot.R")
+times_eval <- 2010:2024
 
 analysis_obj <- create_analaysis_obj(cps)
-test_all_models(2010:2024, analysis_obj)
-
-models <- list(
-  "FDA" = analysis_obj$fda_ar,
-  "Bayes" = analysis_obj$bayes_ar,
-  "LQD" = analysis_obj$lqd_ar,
-  "Wasserstein" = function(t) analysis_obj$wasserstein_ar(t, order = 1)
-)
+models <- models_func(analysis_obj)
+test_all_models(times_eval, analysis_obj, models)
 
 plot_all_models_vs_actual(analysis_obj, 2020, models)
-
-anim <- animate_all_models(analysis_obj, 2010:2024, models, log_scale = TRUE)
+anim <- animate_all_models(analysis_obj, times_eval, models)
 animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
