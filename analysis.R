@@ -43,7 +43,7 @@ cps$ptotval <- cps$ptotval + runif(length(cps$ptotval), -10, 10)
 colnames(cps) <- c("x", "weights", "time")
 
 # Initialize
-create_analaysis_obj <- function(data) {
+create_analaysis_obj <- function(data, k = NA) {
   source("classes.R")
   analysis_obj <- DensityTimeSeries$new(
     data$x,
@@ -60,7 +60,9 @@ create_analaysis_obj <- function(data) {
   analysis_obj$create_quants(seq(0, 1, 0.01))
 
   # KNN bandwidths
-  k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+  if (is.na(k)) {
+    k <- analysis_obj$select_knn_bandwidth(16, verbose = TRUE)
+  }
 
   analysis_obj$create_dens_knn(k)
   analysis_obj
@@ -96,7 +98,7 @@ test_all_models <- function(times, analysis_obj, models) {
 
 times_eval <- 2010:2024
 
-analysis_obj <- create_analaysis_obj(cps)
+analysis_obj <- create_analaysis_obj(cps, k = 10)
 models <- models_func(analysis_obj)
 test_all_models(times_eval, analysis_obj, models)
 
