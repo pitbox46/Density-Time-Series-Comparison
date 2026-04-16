@@ -132,7 +132,7 @@ With the variance held constant, the distribution shifts symmetrically over time
 | **LQD Transformation** | 0.4939 |
 | **WAR (Wasserstein AR)** | 0.5072 |
 
-Because the normal distribution is symmetric and lacks strict boundaries (defined on the entire real line), all methods perform comparably well—even unconstrained FPCA, which is less likely to violate probability constraints when the true density is situated far from zero. In scenarios where parametric assumptions are relaxed but the underlying data exhibits normal-like behavior, the WAR model represents a highly efficient choice, as it achieves equivalent accuracy without the computational overhead of applying Kernel Density Estimation (KDE).
+Because the normal distribution is symmetric and lacks strict boundaries (defined on the entire real line), all methods perform comparably well. Even unconstrained FPCA, which is less likely to violate probability constraints when the true density is situated far from zero does well here. In scenarios where parametric assumptions are relaxed but the underlying data exhibits normal-like behavior, the WAR model represents a highly efficient choice, as it achieves equivalent accuracy without the overhead of applying Kernel Density Estimation (KDE).
 
 ### Lognormal Distribution
 
@@ -146,13 +146,13 @@ $$\mu_t = 0.98\mu_{t-1} + \epsilon_t, \quad \epsilon_t \sim N(0, 0.01^2), \quad 
 | **LQD Transformation** | 42298.48 |
 | **WAR (Wasserstein AR)** | 42077.70 |
 
-Overall, the transformation-based models (LQD and Bayes) successfully capture the right-skewed geometry of the data. While the standard FPCA approach tracks the distribution reasonably well in early periods, it becomes increasingly unstable over time. This instability confirms our theoretical expectations: as the linear FPCA model attempts to forecast right-skewed data, it inevitably generates regions of negative density, severely degrading predictive accuracy. The WAR model correctly captures the functional shape of the distribution, though it exhibits a distinct location shift. This level shifting is a common artifact in non-stationary time series and can likely be resolved by forecasting the first differences of the tangent vectors rather than the raw observations.
+Overall, the transformation-based models (LQD and Bayes) successfully capture the right-skewed geometry of the data. While the standard FPCA approach tracks the distribution reasonably well in early periods, it becomes increasingly unstable over time. This instability occurs because the support of the underlying distribution shifts significantly as the series progresses. Since FPCA constructs forecasts strictly through linear combinations of historically observed basis functions, it intrinsically struggles to accurately estimate future probability densities that reside on novel or shifted domains. The WAR model, by contrast, correctly captures the functional shape of the distribution, but contains a significant location shift. This location shift could likely be solved by introducing differencing to the WAR model.
 
 ### Uniform Distribution
 
 Finally, to test how the models handle strict, hard boundaries, we simulated a uniform distribution where the bounds $a_t$ and $b_t$ independently evolve over time:
 $$a_t = 1.05a_{t-1} + \epsilon_{a,t}, \quad b_t = 1.05b_{t-1} + \epsilon_{b,t}$$
-Where $a_1 = 0$, $b_1 = 1$, and $\epsilon_{a}, \epsilon_{b} \sim N(0, 0.10^2)$.
+Where $a_1 = 0$, $b_1 = 1$, and $\epsilon_{a,t}, \epsilon_{b,t} \sim N(0, 0.10^2)$.
 
 | Model | Average Wasserstein Distance |
 | :--- | :--- |
@@ -163,6 +163,8 @@ Where $a_1 = 0$, $b_1 = 1$, and $\epsilon_{a}, \epsilon_{b} \sim N(0, 0.10^2)$.
 
 The results here sharply highlight the methodological differences between the frameworks. Standard FPCA and the Bayes space approach perform remarkably poorly. The Bayes space transformation introduces extreme visual distortions, creating artificial "humps" in the early quantiles. 
 
-This failure is directly attributable to the preliminary density estimation step. Transformation models require raw data to be smoothed into PDFs via KDE before applying the transformation. When a Gaussian kernel is applied to uniform data, it forces smooth, asymptotic tails beyond the strict $[a, b]$ boundaries. The centered log-ratio (clr) transformation in Bayes space is highly sensitive to these near-zero tail probabilities, artificially amplifying them into massive structural distortions. While LQD handles this slightly better, its accuracy is inherently bottlenecked by this boundary bias.
+Part of this failure is directly attributable to the preliminary density estimation step. Transformation models require raw data to be smoothed into PDFs via KDE before applying the transformation. When a Gaussian kernel is applied to uniform data, it forces smooth, asymptotic tails beyond the strict $[a, b]$ boundaries. It would be optimal to use a different choice of kernel for densities with strict cutoffs. A solution to this issue would likely make the LQD transformation a clear winner. It exhibits higher predictive accuracy, but currently suffers from smoothly decaying tails.
 
-The WAR method successfully circumvents this issue entirely. By operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, the WAR model effortlessly respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth.
+We are unsure of why the Bayes space method does poorly here. The method does quite well for some time points, but quickly deviates to include the aforementioned "hump". This instability seems to be isolated to the Uniform distribution.
+
+The WAR method, by operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, effortlessly respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth. The WAR also exhibits good predictive accuracy with a Wasserstein distance within 5% of the LQD method.
