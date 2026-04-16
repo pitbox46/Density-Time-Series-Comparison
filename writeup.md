@@ -210,4 +210,4 @@ Quantitatively, the transformation-based models (LQD and Bayes) achieved slightl
 
 Conversely, by bypassing the KDE step and operating directly on the weighted empirical quantiles, the WAR method visually outperforms its counterparts, successfully preserving the zero-inflated geometry of the income data.
 
-![Quantile predictions of several Density Time Series methods on CPS Income data. Taken at the maximum time, 40](media/incomes2024.png)
+![Quantile predictions of several Density Time Series methods on CPS Income data. Taken at the maximum time, 2024](media/incomes2024.png)
