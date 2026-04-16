@@ -60,7 +60,7 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, as
 }
 
 # --- 2. Animated Plot: Evolution Across Time ---
-animate_all_models <- function(analysis_obj, times, models_list, asinh_scale = FALSE) {
+animate_all_models <- function(title, analysis_obj, times, models_list, asinh_scale = FALSE) {
   all_dfs <- list()
 
   # Build a combined dataframe for all specified times
@@ -97,7 +97,7 @@ animate_all_models <- function(analysis_obj, times, models_list, asinh_scale = F
     )) +
     theme_minimal() +
     labs(
-      title = "Model Comparison (t = {frame_time})",
+      title = paste(title, "(t = {frame_time})"),
       x = "Probability",
       y = ifelse(asinh_scale, "Inverse Hyperbolic Sine Value", "Value")
     ) +

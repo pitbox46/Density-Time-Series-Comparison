@@ -2,6 +2,8 @@ setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 source("plot.R")
 
+set.seed(1234)
+
 create_analaysis_obj <- function(data, ...) {
   analysis_obj <- DensityTimeSeries$new(
     data$x,
@@ -52,8 +54,8 @@ test_all_models <- function(times, analysis_obj, models) {
 }
 
 # Create animation
-create_anim <- function(analysis_obj, times, models, asinh_scale = FALSE) {
-  anim <- animate_all_models(analysis_obj, times, models, asinh_scale = TRUE)
+create_anim <- function(title, analysis_obj, times, models, asinh_scale = FALSE) {
+  anim <- animate_all_models(title, analysis_obj, times, models, asinh_scale = asinh_scale)
   animate(anim, nframes = 60, fps = 3, width = 2000, height = 2000, res = 200)
 }
 
@@ -82,8 +84,8 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-plot_all_models_vs_actual(analysis_obj, 40, models, asinh_scale = TRUE)
-create_anim(analysis_obj, 20:40, models, asinh_scale = TRUE)
+create_anim("Log Normal", analysis_obj, 20:40, models, asinh_scale = TRUE)
+anim_save("log_norm.gif")
 
 create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data <- data.frame(
@@ -109,8 +111,8 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-plot_all_models_vs_actual(analysis_obj, 40, models)
-create_anim(analysis_obj, 20:40, models)
+create_anim("Normal", analysis_obj, 20:40, models)
+anim_save("norm.gif")
 
 create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data <- data.frame(
@@ -137,5 +139,5 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-plot_all_models_vs_actual(analysis_obj, 40, models)
-create_anim(analysis_obj, 20:40, models)
+create_anim("Uniform", analysis_obj, 20:40, models)
+anim_save("unif.gif")
