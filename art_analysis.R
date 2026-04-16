@@ -78,6 +78,29 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
+fda_obj <- analysis_obj$fda_ar(40)
+fda_obj <- data.frame(
+  x = asinh(fda_obj$forecast_dens$mean$x),
+  y = fda_obj$forecast_pdf
+)
+plott <- ggplot(fda_obj, aes(x = x, y = y)) +
+  geom_line() +
+  geom_hline(yintercept = 0, color = "grey") +
+  theme_minimal() +
+  labs(
+    title = "Log Normal - FPCA Forecast (t = 40)",
+    x = "Inverse Hyperbolic Sine Value",
+    y = "Probability"
+  )
+ggsave(
+  "media/log_norm40fpca.png",
+  plot = plott,
+  width = 1600,
+  height = 1600,
+  units = "px",
+  dpi = 200
+)
+
 plot_title <- "Log Normal"
 
 save_plot(
