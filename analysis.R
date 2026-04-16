@@ -1,6 +1,8 @@
 options(error = function() traceback(3))
 source("plot.R")
 
+set.seed(1234)
+
 # Load data file or get the data from the CPS API
 import_cps <- function(load_file, years, data_file = "./data.RData") {
   # If we have one saved, we use the given file instead
@@ -104,7 +106,7 @@ models <- models_func(analysis_obj)
 test_all_models(times_eval, analysis_obj, models)
 
 
-plot_title <- "Uniform"
+plot_title <- "CPS Income Quantiles"
 
 save_plot(
   plot_title,
