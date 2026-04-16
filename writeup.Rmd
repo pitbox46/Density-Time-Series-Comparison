@@ -72,7 +72,14 @@ Two prevalent transformations include:
 
 Alternatively, the object-oriented approach relies on the intrinsic geometric structure of the densities by utilizing non-Euclidean metrics that induce a manifold structure, such as the Fisher-Rao or Wasserstein metrics. 
 
-When analyzing density time series, the 2-Wasserstein metric, an optimal transport distance that measures the cost of transforming one probability distribution into another, is highly effective. Because the Wasserstein space $\mathcal{W}_2$ is nonlinear, linear time series models like autoregression cannot be applied directly to the density functions. Instead,
+When analyzing density time series, the 2-Wasserstein metric, an optimal transport distance that measures the cost of transforming one probability distribution into another, is highly effective. Because the Wasserstein space $\mathcal{W}_2$ is nonlinear, linear time series models like autoregression cannot be applied directly to the density functions. Instead, we must exploit the differential geometry of the manifold by mapping the densities into a flat, linear space where traditional functional tools become mathematically valid. This is achieved by operating within the tangent space. 
+
+The general framework for this geometric projection proceeds as follows:
+
+1.  **The Fréchet Mean:** We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean. This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
+2.  **The Logarithmic Map:** We use a logarithmic map to "lift" the observed densities from the nonlinear manifold into the tangent space anchored at the Fréchet mean. 
+3.  **Linear Modeling:** Because the tangent space is a Hilbert space, it is perfectly flat and linear. Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
+4.  **The Exponential Map:** Finally, we apply an exponential map to project our functional forecasts or principal components back from the tangent space onto the density manifold, natively recovering valid probability density functions.
 
 ## Forecasting Methods for Density Time Series
 
@@ -168,3 +175,9 @@ Part of this failure is directly attributable to the preliminary density estimat
 We are unsure of why the Bayes space method does poorly here. The method does quite well for some time points, but quickly deviates to include the aforementioned "hump". This instability seems to be isolated to the Uniform distribution.
 
 The WAR method, by operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, effortlessly respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth. The WAR also exhibits good predictive accuracy with a Wasserstein distance within 5% of the LQD method.
+
+## Real Data: US Individual Incomes
+
+Testing methods solely on artificial datasets may not give a good impression of realistic use. To get an impression of real world use, we test our chosen prediction methods on US individual incomes from 2010 to 2024. This data is from the US Census Bureau's Current Population Survey, an annual survey of American households. We take interest in two fields from this survey, `ptotval` and `a_ernlwt`. The first variable contains the individual income in US Dollars. We choose to manually scale these values using CPI data, so they become inflation adjusted. The second value is the survey weights that correspond to earnings questions. To ensure an accurate analysis, we opted to use the survey weights.
+
+
