@@ -97,12 +97,25 @@ test_all_models <- function(times, analysis_obj, models) {
   wass_dists
 }
 
+# Create animation
+create_anim <- function(title, analysis_obj, times, models, asinh_scale = FALSE) {
+  anim <- animate_all_models(title, analysis_obj, times, models, asinh_scale = asinh_scale)
+  animate(
+    anim,
+    nframes = 60,
+    fps = 3,
+    width = 2000,
+    height = 2000,
+    res = 200,
+    renderer = av_renderer()
+  )
+}
+
 times_eval <- 2010:2024
 
 analysis_obj <- create_analaysis_obj(cps, k = NA)
 models <- models_func(analysis_obj)
 test_all_models(times_eval, analysis_obj, models)
 
-plot_all_models_vs_actual(analysis_obj, 2020, models, asinh_scale = TRUE)
-anim <- animate_all_models(analysis_obj, times_eval, models, asinh_scale = TRUE)
-animate(anim, nframes = 50, fps = 5, width = 1000, height = 1000)
+create_anim("Incomes CDF", analysis_obj, times_eval, models, asinh_scale = TRUE)
+anim_save("cps.mp4")
