@@ -6,13 +6,13 @@ date: "2026-04-16"
 
 ## Introduction
 
-The distribution of personal income is a fundamental indicator of economic health and societal structure. Traditionally, income distributions and longitudinal wealth dynamics are analyzed through a handful of aggregate statistics that describe their center and spread, such as the mean, median, variance, or the Gini coefficient. While these scalar metrics provide convenient summaries, they fundamentally discard the rich, structural nuances of the underlying data. Complex phenomena such as shifting multimodality, heavy right-skewness, and varying degrees of zero-inflation cannot be fully captured by summary statistics alone. To achieve a more comprehensive understanding of these economic dynamics, it is necessary to shift the analytical paradigm from tracking single statistics to modeling the entire income distribution as a singular mathematical object.
+Traditionally, income distributions and longitudinal wealth dynamics are analyzed using aggregate statistics like the mean, median, or Gini coefficient. While convenient, these scalar metrics obscure structural features of the underlying data, such as shifting multimodality, heavy right-skewness, and zero-inflation. Capturing these dynamics requires moving beyond summary statistics and modeling the entire income distribution as a single functional object.
 
-Functional Data Analysis (FDA) provides the theoretical foundation for this approach, allowing researchers to analyze sequences of entire continuous curves. However, when these functional objects are probability density functions (PDFs), classical linear FDA methods fail because they do not inherently respect the strict mathematical constraints of densities. Namely, that they must remain non-negative and integrate to one. Recent literature has made significant strides in overcoming these limitations. Petersen et al. (2022) laid a comprehensive groundwork for modeling probability density functions as data objects, detailing specialized nonlinear transformations and geometric spaces that allow for mathematically coherent functional analysis.
+Functional Data Analysis (FDA) provides the tools to analyze sequences of continuous curves. However, classical linear FDA methods fail when applied to probability density functions (PDFs) because they do not naturally enforce the requirements that densities remain non-negative and integrate to one. Petersen et al. (2022) addressed this limitation by detailing specialized nonlinear transformations and geometric spaces that allow PDFs to be analyzed as valid data objects without violating these constraints.
 
-This paper builds directly upon the foundational time series frameworks discussed in Petersen (2022), seeking to extend and benchmark those comparative results against a uniquely challenging class of real-world data. While previous studies have often evaluated density time series models on relatively well-behaved or simulated datasets, this research applies these frameworks to highly non-normal, and zero-inflated individual income data sourced from the US Current Population Survey (CPS).
+Building on the time series frameworks discussed in Petersen (2022), this paper benchmarks these methods against complex, real-world data. While previous studies often evaluate density time series models on simulated or well-behaved datasets, we apply these frameworks to individual income data from the US Current Population Survey (CPS). This data presents significant modeling challenges due to its extreme skewness and zero-inflation.
 
-The primary objective of this study is to evaluate the predictive accuracy of competing Density Time Series methodologies—comparing standard Functional Principal Component Analysis (FPCA), transformation-based approaches (LQD and Bayes spaces), and the geometric Wasserstein Autoregressive (WAR) model. While the mathematical frameworks explored in this paper possess the rigorous theoretical properties necessary to conduct deep statistical inference, the explicit scope of this study is restricted to evaluating their empirical forecasting and predictive capabilities. By testing these models on complex, weighted economic survey data, this paper aims to identify the most robust methodology for forecasting distributions when traditional assumptions of symmetry, unboundedness, and normality break down.
+The primary objective of this study is to compare the predictive accuracy of competing Density Time Series methodologies: standard Functional Principal Component Analysis (FPCA), transformation-based approaches (LQD and Bayes spaces), and the geometric Wasserstein Autoregressive (WAR) model. Although these frameworks support formal statistical inference, our scope is strictly restricted to evaluating their empirical forecasting performance. By testing these models on weighted economic survey data, we determine which methodology is most effective when traditional assumptions of symmetry and normality fail.
 
 ## Functional Data Analysis
 
@@ -51,7 +51,7 @@ Because of its computational simplicity and highly interpretable outputs, FPCA i
 
 In a conventional time series, observations are finite-dimensional scalars or vectors recorded at discrete time points. A functional time series, however, sits at the intersection of time series analysis and functional data analysis: the overall sequence is still indexed by discrete time points ($t \in \mathbb{Z}$), but the observation recorded at each point is an entire continuous function residing in a function space.
 
-This continuous nature presents a mathematical challenge for forecasting. Because a continuous curve intrinsically possesses infinite dimensions, it cannot be reduced to a finite-dimensional space without utilizing basis expansions or specialized transformations. Therefore, traditional forecasting models—such as Autoregressive (AR) or Vector Autoregressive (VAR) models—cannot be directly applied to the raw curves.
+This continuous nature presents a mathematical challenge for forecasting. Because a continuous curve intrinsically possesses infinite dimensions, it cannot be reduced to a finite-dimensional space without utilizing basis expansions or specialized transformations. Therefore, traditional forecasting models, such as Autoregressive (AR) or Vector Autoregressive (VAR) models, cannot be directly applied to the raw curves.
 
 The common solution is to utilize FPCA. By truncating this expansion to the first $J$ principal components, FPCA effectively compresses the infinite-dimensional curves into finite vectors of scores. This unlocks the standard functional time series forecasting workflow:
 
@@ -75,8 +75,8 @@ The transformation approach relies on applying an invertible mapping $\psi$ that
 
 Two prevalent transformations include:
 
-- **Log Quantile Density (LQD) Transformation:** For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$. The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1. For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
-- **Centered Log-Ratio (clr) Transformation:** Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information. The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
+- Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$. The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1. For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
+- Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information. The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
 
 ### Object-Oriented and Geometric Approaches (Wasserstein Space)
 
@@ -86,10 +86,10 @@ When analyzing density time series, the 2-Wasserstein metric, an optimal transpo
 
 The general framework for this geometric projection proceeds as follows:
 
-1. **The Fréchet Mean:** We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean. This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
-2. **The Logarithmic Map:** We use a logarithmic map to "lift" the observed densities from the nonlinear manifold into the tangent space anchored at the Fréchet mean.
-3. **Linear Modeling:** Because the tangent space is a Hilbert space, it is perfectly flat and linear. Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
-4. **The Exponential Map:** Finally, we apply an exponential map to project our functional forecasts or principal components back from the tangent space onto the density manifold, natively recovering valid probability density functions.
+1. The Fréchet Mean: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean. This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
+2. The Logarithmic Map: We use a logarithmic map to "lift" the observed densities from the nonlinear manifold into the tangent space anchored at the Fréchet mean.
+3. Linear Modeling: Because the tangent space is a Hilbert space, it is perfectly flat and linear. Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
+4. The Exponential Map: Finally, we apply an exponential map to project our functional forecasts or principal components back from the tangent space onto the density manifold, natively recovering valid probability density functions.
 
 ## Forecasting Methods for Density Time Series
 
@@ -97,10 +97,10 @@ While the foundational mathematics of projecting densities into representation s
 
 Recent literature has proposed a variety of models to tackle this, each with unique advantages depending on the data structure:
 
-- **Parametric Approaches (ST):** Rather than modeling the full functional curve, this method assumes the data follows a specific parametric family, such as a skewed $t$-distribution. The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector. This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
-- **Dynamic Functional Principal Component Regression (HC):** This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR. Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
-- **Log Quantile Density (LQD) Transformation:** This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied. The inverse transformation is then applied to recover the forecasted density.
-- **Compositional Data Analysis (CoDa):** Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation. FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
+- Parametric Approaches (ST): Rather than modeling the full functional curve, this method assumes the data follows a specific parametric family, such as a skewed $t$-distribution. The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector. This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
+- Dynamic Functional Principal Component Regression (HC): This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR. Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
+- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied. The inverse transformation is then applied to recover the forecasted density.
+- Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation. FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
 
 While transformation-based methods like CoDa and LQD natively enforce the probability constraints of the predicted densities, they traditionally require the preliminary step of generating smoothed probability density functions (e.g., via Kernel Density Estimation) prior to transformation and analysis.
 
@@ -121,13 +121,13 @@ While extensions of this model, such as Fully Functional WAR (FF-WAR), utilize c
 
 The primary advantage of the WAR framework stems from the intrinsic properties of the 2-Wasserstein metric. In one dimension, the Wasserstein distance between two measures is uniquely defined by the $L^2$ distance between their respective quantile functions. Because the entire geometric structure of $\mathcal{W}_2$ (including the Fréchet mean, tangent spaces, and logarithmic maps) can be expressed in terms of optimal transport maps between quantile functions, the WAR method effectively bypasses the need for explicit probability density functions during the modeling phase.
 
-This presents massive computational and methodological advantages over transformation-based methods like LQD or CoDa. Specifically, the WAR model can be executed directly on cumulative distribution functions (CDFs) or empirical quantile grids. By circumventing the need for Kernel Density Estimation (KDE), the WAR framework completely avoids the computational overhead of smoothing raw data points into functional curves. Furthermore, this eliminates the risk of introducing estimation bias caused by subjective bandwidth parameter selection, allowing the autoregressive logic to interact directly with the empirical distribution of the data. Structurally, the Wasserstein mean is also known to preserve the distinctive locations and heights of distributional modes far better than cross-sectional averaging or transformations.
+This presents significant computational and methodological advantages over transformation-based methods like LQD or CoDa. Specifically, the WAR model can be executed directly on cumulative distribution functions (CDFs) or empirical quantile grids. By circumventing the need for Kernel Density Estimation (KDE), the WAR framework completely avoids the computational overhead of smoothing raw data points into functional curves. Furthermore, this eliminates the risk of introducing estimation bias caused by subjective bandwidth parameter selection, allowing the autoregressive logic to interact directly with the empirical distribution of the data. Structurally, the Wasserstein mean is also known to preserve the distinctive locations and heights of distributional modes far better than cross-sectional averaging or transformations.
 
 ### Application to Highly Skewed Survey Data
 
 While previous research has benchmarked these density time series methods against well-behaved simulated datasets or financial returns, their comparative performance on highly non-normal, real-world data remains an open question.
 
-This research aims to benchmark the predictive accuracy of the WAR method against transformation-based models (such as LQD and CoDa) using longitudinal, individual-level income data derived from the Current Population Survey (CPS). Income distributions introduce unique functional challenges: they are heavily right-skewed, naturally bounded at zero, and feature extreme outliers that heavily distort Euclidean metrics. Furthermore, CPS data relies on complex survey weights to accurately reflect the true population structure, meaning the empirical quantiles and underlying densities are not uniform.
+This research aims to benchmark the predictive accuracy of the WAR method against transformation-based models (such as LQD and Bayes space) using longitudinal, individual-level income data derived from the Current Population Survey (CPS). Income distributions introduce unique functional challenges: they are heavily right-skewed, naturally bounded at zero, and feature extreme outliers that heavily distort Euclidean metrics. Furthermore, CPS data relies on complex survey weights to accurately reflect the true population structure, meaning the empirical quantiles and underlying densities are not uniform.
 
 By analyzing how these competing geometries handle heavily skewed, weighted data, this study seeks to determine whether the computational and structural advantages of the quantile-driven Wasserstein framework yield superior forecasting accuracy when traditional assumptions of symmetry and normality break down.
 
@@ -149,7 +149,7 @@ $Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively.
 
 ## Empirical Results: Synthetic Data
 
-To benchmark the predictive accuracy of the models discussed, we first evaluated their performance on synthetic density time series. For each scenario, we simulated $n = 1000$ independent observations at each discrete time point over a horizon of $T = 40$. The data was generated from three distinct distributional families—Normal, Lognormal, and Uniform—to test the flexibility of each forecasting framework under varying geometric and boundary conditions.
+To benchmark the predictive accuracy of the models discussed, we first evaluated their performance on synthetic density time series. For each scenario, we simulated $n = 1000$ independent observations at each discrete time point over a horizon of $T = 40$. The data was generated from three distinct distributional families, Normal, Lognormal, and Uniform, to test the flexibility of each forecasting framework under varying geometric and boundary conditions.
 
 Predictive accuracy was evaluated by computing the average 2-Wasserstein distance between the forecasted predictive densities and the true empirical quantiles of the holdout data.
 
@@ -159,12 +159,12 @@ The normal distribution provides a baseline scenario with minimal structural com
 $$\mu_t = 1.1\mu_{t-1} + \epsilon_t, \quad \epsilon_t \sim N(0, 0.10^2), \quad \mu_1 = 0$$
 With the variance held constant, the distribution shifts symmetrically over time.
 
-| Model                          | Average Wasserstein Distance |
-| :----------------------------- | :--------------------------- |
-| **FDA (Standard FPCA)**        | 0.4870                       |
-| **Bayes (clr Transformation)** | 0.5177                       |
-| **LQD Transformation**         | 0.4939                       |
-| **WAR (Wasserstein AR)**       | 0.5072                       |
+| Model                      | Average Wasserstein Distance |
+| :------------------------- | :--------------------------- |
+| FDA (Standard FPCA)        | 0.4870                       |
+| Bayes (clr Transformation) | 0.5177                       |
+| LQD Transformation         | 0.4939                       |
+| WAR (Wasserstein AR)       | 0.5072                       |
 
 ![Quantile predictions of several Density Time Series methods on Normal data with an autoregressive mean. Taken at the maximum time, 40](media/norm40.png)
 
@@ -175,12 +175,12 @@ Because the normal distribution is symmetric and lacks strict boundaries (define
 To introduce right-skewness and a strict lower bound at zero, we evolved a lognormal distribution using a similar autoregressive structure for the log-mean:
 $$\mu_t = 0.98\mu_{t-1} + \epsilon_t, \quad \epsilon_t \sim N(0, 0.01^2), \quad \mu_1 = 10$$
 
-| Model                          | Average Wasserstein Distance |
-| :----------------------------- | :--------------------------- |
-| **FDA (Standard FPCA)**        | 42084.39                     |
-| **Bayes (clr Transformation)** | 41882.08                     |
-| **LQD Transformation**         | 42298.48                     |
-| **WAR (Wasserstein AR)**       | 42077.70                     |
+| Model                      | Average Wasserstein Distance |
+| :------------------------- | :--------------------------- |
+| FDA (Standard FPCA)        | 42084.39                     |
+| Bayes (clr Transformation) | 41882.08                     |
+| LQD Transformation         | 42298.48                     |
+| WAR (Wasserstein AR)       | 42077.70                     |
 
 ![Quantile predictions of several Density Time Series methods on Log-Normal data with an autoregressive mean. Taken at the maximum time, 40](media/log_norm40.png)
 
@@ -192,22 +192,22 @@ Finally, to test how the models handle strict, hard boundaries, we simulated a u
 $$a_t = 1.05a_{t-1} + \epsilon_{a,t}, \quad b_t = 1.05b_{t-1} + \epsilon_{b,t}$$
 Where $a_1 = 0$, $b_1 = 1$, and $\epsilon_{a,t}, \epsilon_{b,t} \sim N(0, 0.10^2)$.
 
-| Model                          | Average Wasserstein Distance |
-| :----------------------------- | :--------------------------- |
-| **FDA (Standard FPCA)**        | 1.4586                       |
-| **Bayes (clr Transformation)** | 1.8044                       |
-| **LQD Transformation**         | 1.1432                       |
-| **WAR (Wasserstein AR)**       | 1.1992                       |
+| Model                      | Average Wasserstein Distance |
+| :------------------------- | :--------------------------- |
+| FDA (Standard FPCA)        | 1.4586                       |
+| Bayes (clr Transformation) | 1.8044                       |
+| LQD Transformation         | 1.1432                       |
+| WAR (Wasserstein AR)       | 1.1992                       |
 
 ![Quantile predictions of several Density Time Series methods on Uniform data with an autoregressive lower and upper bounds. Taken at the maximum time, 40](media/unif40.png)
 
-The results here sharply highlight the methodological differences between the frameworks. Standard FPCA and the Bayes space approach perform remarkably poorly. The Bayes space transformation introduces extreme visual distortions, creating artificial "humps" in the early quantiles.
+The results here highlight the methodological differences between the frameworks. Standard FPCA and the Bayes space approach perform remarkably poorly. The Bayes space transformation introduces extreme visual distortions, creating artificial "humps" in the early quantiles.
 
 Part of this failure is directly attributable to the preliminary density estimation step. Transformation models require raw data to be smoothed into PDFs via KDE before applying the transformation. When a Gaussian kernel is applied to uniform data, it forces smooth, asymptotic tails beyond the strict $[a, b]$ boundaries. It would be optimal to use a different choice of kernel for densities with strict cutoffs. A solution to this issue would likely make the LQD transformation a clear winner. It exhibits higher predictive accuracy, but currently suffers from smoothly decaying tails.
 
 We are unsure of why the Bayes space method does poorly here. The method does quite well for some time points, but quickly deviates to include the aforementioned "hump". This instability seems to be isolated to the Uniform distribution.
 
-The WAR method, by operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, effortlessly respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth. The WAR also exhibits good predictive accuracy with a Wasserstein distance within 5% of the LQD method.
+The WAR method, by operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth. The WAR also exhibits good predictive accuracy with a Wasserstein distance within 5% of the LQD method.
 
 ## Real Data: US Individual Incomes
 
@@ -217,12 +217,12 @@ Our analysis focuses on two specific variables from this survey: `ptotval` and `
 
 Beyond the integration of these survey weights, the forecasting methodology aligns identically with the structure utilized in the synthetic data analysis.
 
-| Model                          | Average Wasserstein Distance |
-| :----------------------------- | :--------------------------- |
-| **FDA (Standard FPCA)**        | 149754.1                     |
-| **Bayes (clr Transformation)** | 137338.2                     |
-| **LQD Transformation**         | 135701.0                     |
-| **WAR (Wasserstein AR)**       | 150603.0                     |
+| Model                      | Average Wasserstein Distance |
+| :------------------------- | :--------------------------- |
+| FDA (Standard FPCA)        | 149754.1                     |
+| Bayes (clr Transformation) | 137338.2                     |
+| LQD Transformation         | 135701.0                     |
+| WAR (Wasserstein AR)       | 150603.0                     |
 
 Quantitatively, the transformation-based models (LQD and Bayes) achieved slightly lower average Wasserstein distances than the WAR model. However, visual inspection reveals that they provide a noticeably poorer structural match to the empirical data. In particular, the LQD transformation exhibits an extreme deviation from the observed quantiles at probability values below 0.5. The method struggles to capture the zero-inflated nature of the income distribution.
 
@@ -232,10 +232,10 @@ Conversely, by bypassing the KDE step and operating directly on the weighted emp
 
 ## Conclusion
 
-This study evaluated the comparative predictive accuracy of modern density time series forecasting models, specifically contrasting transformation-based approaches (LQD and Bayes space) with the object-oriented geometry of the Wasserstein Autoregressive (WAR) framework. While conventional Functional Principal Component Analysis (FPCA) is mathematically ill-equipped to handle the strict non-negative and integrability constraints of probability density functions, modern approaches successfully navigate these boundaries by projecting data into specialized representation spaces.
+This study compared the predictive accuracy of density time series forecasting models, contrasting transformation-based approaches (LQD and Bayes space) with the Wasserstein Autoregressive (WAR) framework. While conventional Functional Principal Component Analysis (FPCA) inherently violates the non-negative and integrability constraints of probability density functions, modern approaches navigate these boundaries by projecting data into specialized representation spaces.
 
-However, our empirical results highlight a critical bottleneck in transformation-based methodologies: their strict reliance on a preliminary Kernel Density Estimation (KDE) step. As demonstrated by both the synthetic uniform distribution and the real-world CPS individual income data, KDE adds significant complexity, but usually preforms on part with WAR methods. By operating directly on weighted empirical quantiles and bypassing the need for continuous density approximation, the WAR model avoids these boundary effects entirely. While LQD and Bayes approaches occasionally yielded marginally lower average error metrics, the WAR framework proved vastly superior at preserving the true, complex structural geometry—such as heavy tails and zero-inflated peaks—of highly skewed socioeconomic data.
+Our empirical results highlight a critical bottleneck in transformation-based methodologies: their reliance on a preliminary Kernel Density Estimation (KDE) step. As demonstrated by the synthetic uniform distribution and the CPS individual income data, KDE adds complexity but generally performs on par with WAR methods. By operating directly on weighted empirical quantiles and bypassing continuous density approximation, the WAR model avoids KDE-induced boundary effects. Even when LQD and Bayes approaches yielded marginally lower average error metrics, the WAR framework better preserved key structural features, such as heavy tails and zero-inflated peaks, in highly skewed socioeconomic data.
 
-Despite these structural advantages, the standard WAR framework is not without its limitations. Our analysis of the synthetic lognormal distribution revealed that the model can exhibit distinct location shifts when applied to non-stationary data with dynamically evolving means. Future research should explore the application of differenced Wasserstein autoregressive models to better capture these non-stationary level shifts over time. Additionally, expanding this comparative framework to include Fully Functional WAR (FF-WAR) models could further refine our understanding of optimal transport geometries in time series forecasting.
+Despite these advantages, the standard WAR framework has limitations. Our analysis of the synthetic lognormal distribution showed that the model can exhibit location shifts when applied to non-stationary data with dynamically evolving means. Future research should explore differenced Wasserstein autoregressive models to account for these non-stationary level shifts. Additionally, expanding this comparative framework to include Fully Functional WAR (FF-WAR) models could refine our understanding of optimal transport geometries in time series forecasting.
 
-Ultimately, for researchers analyzing strictly bounded, heavily skewed, or complex weighted data, the quantile-driven WAR model offers a robust, structurally faithful, and computationally efficient forecasting solution.
+For researchers analyzing strictly bounded, heavily skewed, or complex weighted data, the quantile-driven WAR model offers a structurally faithful and computationally efficient forecasting solution.
