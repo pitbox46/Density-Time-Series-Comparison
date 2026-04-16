@@ -4,6 +4,16 @@ author: "Mason Griswold"
 date: "2026-04-16"
 ---
 
+## Introduction
+
+The distribution of personal income is a fundamental indicator of economic health and societal structure. Traditionally, income distributions and longitudinal wealth dynamics are analyzed through a handful of aggregate statistics that describe their center and spread, such as the mean, median, variance, or the Gini coefficient. While these scalar metrics provide convenient summaries, they fundamentally discard the rich, structural nuances of the underlying data. Complex phenomena such as shifting multimodality, heavy right-skewness, and varying degrees of zero-inflation cannot be fully captured by summary statistics alone. To achieve a more comprehensive understanding of these economic dynamics, it is necessary to shift the analytical paradigm from tracking single statistics to modeling the entire income distribution as a singular mathematical object.
+
+Functional Data Analysis (FDA) provides the theoretical foundation for this approach, allowing researchers to analyze sequences of entire continuous curves. However, when these functional objects are probability density functions (PDFs), classical linear FDA methods fail because they do not inherently respect the strict mathematical constraints of densities—namely, that they must remain non-negative and integrate to one. Recent literature has made significant strides in overcoming these limitations. Petersen et al. (2022) laid a comprehensive groundwork for modeling probability density functions as data objects, detailing specialized nonlinear transformations and geometric spaces that allow for mathematically coherent functional analysis.
+
+This paper builds directly upon the foundational time series frameworks discussed in Petersen (2022), seeking to extend and benchmark those comparative results against a uniquely challenging class of real-world data. While previous studies have often evaluated density time series models on relatively well-behaved or simulated datasets, this research applies these frameworks to highly non-normal, and zero-inflated individual income data sourced from the US Current Population Survey (CPS).
+
+The primary objective of this study is to evaluate the predictive accuracy of competing Density Time Series methodologies—comparing standard Functional Principal Component Analysis (FPCA), transformation-based approaches (LQD and Bayes spaces), and the geometric Wasserstein Autoregressive (WAR) model. While the mathematical frameworks explored in this paper possess the rigorous theoretical properties necessary to conduct deep statistical inference, the explicit scope of this study is restricted to evaluating their empirical forecasting and predictive capabilities. By testing these models on complex, weighted economic survey data, this paper aims to identify the most robust methodology for forecasting distributions when traditional assumptions of symmetry, unboundedness, and normality break down.
+
 ## Functional Data Analysis
 
 Conventional quantitative data typically takes the form of a scalar or a finite vector. For instance, recording a subject's age, height, and weight yields an observation in $\mathbb{R}^3$. However, in many applications, the underlying data-generating process is better represented as an entire continuous function. For example, a subject's height recorded over several years represents a continuous growth curve. While traditional time-series analysis could be applied to this data, it inherently assumes discrete time intervals. Functional Data Analysis (FDA), by contrast, models the domain as a continuum, allowing for inference at arbitrary intermediate values without being constrained to discrete observation points.
@@ -128,6 +138,14 @@ To ensure a rigorous comparison between the KDE-based methods and the WAR framew
 To determine the optimal parameter $k$, we employ a rolling-window forecasting approach. For a candidate value of $k$, we estimate the probability density functions and construct a one-step-ahead FPCA forecast over a sequence of time points (e.g., iteratively forecasting $t=2000$ through $t=2024$). Predictive accuracy is quantified by computing the 2-Wasserstein distance between the forecasted density and the true empirical distribution at each time step. We evaluate multiple candidate values and select the $k$ that minimizes the average Wasserstein distance across the forecasting horizon. To maintain consistency and isolate the effects of the respective transformations, this optimal $k$ is applied uniformly across all KDE-based models (Standard FPCA, LQD, and Bayes space).
 
 In practice, functional data tools require continuous KDE functions to be discretized over a finite grid. To achieve this, we evaluate the estimated densities over a pooled empirical quantile grid constructed from all observations across all time periods, utilizing probability increments of 0.001. This approach guarantees that the resulting grid spans the full support of the data at all time points. Furthermore, a quantile-based grid naturally allocates a higher density of evaluation points to regions with high probability mass while reducing resolution in the sparse tails. This strategically optimizes the trade-off between functional fidelity and computational overhead, capturing critical structural details without the cost of a uniformly dense support grid.
+
+To evaluate the accuracy of model predictions, we use the Wasserstein distance. The Wasserstein distance between two 1-dimensional probability functions can be expressed as:
+
+$$
+W_2(f, g) = \left( \int_0^1 (Q_f(u) - Q_g(u))^2 \, du \right)^{1/2}
+$$
+
+$Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively.
 
 ## Empirical Results: Synthetic Data
 
