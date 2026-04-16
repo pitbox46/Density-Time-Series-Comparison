@@ -22,7 +22,7 @@ get_predicted_quantiles <- function(analysis_obj, target_time, model_func) {
 }
 
 # --- 1. Static Plot: All Models vs Actual ---
-plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, asinh_scale = FALSE) {
+plot_all_models_vs_actual <- function(title, analysis_obj, target_time, models_list, asinh_scale = FALSE) {
   prob_grid <- analysis_obj$quant_grid
   actual_quant <- analysis_obj$quant_mat[, as.character(target_time)]
 
@@ -53,7 +53,7 @@ plot_all_models_vs_actual <- function(analysis_obj, target_time, models_list, as
     )) +
     theme_minimal() +
     labs(
-      title = sprintf("Model Comparison (t = %s)", target_time),
+      title = sprintf(paste(title, "(t = %i)"), target_time),
       x = "Probability",
       y = ifelse(asinh_scale, "Inverse Hyperbolic Sine Value", "Value")
     )
@@ -105,4 +105,31 @@ animate_all_models <- function(title, analysis_obj, times, models_list, asinh_sc
     ease_aes("linear")
 
   return(p)
+}
+
+# Create animation
+create_anim <- function(title, analysis_obj, times, models, asinh_scale = FALSE) {
+  anim <- animate_all_models(title, analysis_obj, times, models, asinh_scale = asinh_scale)
+  animate(
+    anim,
+    nframes = 60,
+    fps = 3,
+    width = 1600,
+    height = 1600,
+    res = 200,
+    renderer = av_renderer()
+  )
+}
+
+# Save plot
+save_plot <- function(title, filename, analysis_obj, time, models, asinh_scale = FALSE) {
+  plott <- plot_all_models_vs_actual(title, analysis_obj, time, models, asinh_scale = asinh_scale)
+  ggsave(
+    filename,
+    plot = plott,
+    width = 1600,
+    height = 1600,
+    units = "px",
+    dpi = 200
+  )
 }

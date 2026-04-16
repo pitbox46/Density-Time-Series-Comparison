@@ -97,25 +97,23 @@ test_all_models <- function(times, analysis_obj, models) {
   wass_dists
 }
 
-# Create animation
-create_anim <- function(title, analysis_obj, times, models, asinh_scale = FALSE) {
-  anim <- animate_all_models(title, analysis_obj, times, models, asinh_scale = asinh_scale)
-  animate(
-    anim,
-    nframes = 60,
-    fps = 3,
-    width = 2000,
-    height = 2000,
-    res = 200,
-    renderer = av_renderer()
-  )
-}
-
 times_eval <- 2010:2024
 
 analysis_obj <- create_analaysis_obj(cps, k = NA)
 models <- models_func(analysis_obj)
 test_all_models(times_eval, analysis_obj, models)
 
+
+plot_title <- "Uniform"
+
+save_plot(
+  plot_title,
+  "media/incomes2024.png",
+  analysis_obj,
+  2024,
+  models,
+  asinh_scale = TRUE
+)
+
 create_anim("Incomes CDF", analysis_obj, times_eval, models, asinh_scale = TRUE)
-anim_save("cps.mp4")
+anim_save("media/incomes.mp4")

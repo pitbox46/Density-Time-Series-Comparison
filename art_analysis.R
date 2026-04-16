@@ -53,20 +53,6 @@ test_all_models <- function(times, analysis_obj, models) {
   wass_dists
 }
 
-# Create animation
-create_anim <- function(title, analysis_obj, times, models, asinh_scale = FALSE) {
-  anim <- animate_all_models(title, analysis_obj, times, models, asinh_scale = asinh_scale)
-  animate(
-    anim,
-    nframes = 60,
-    fps = 3,
-    width = 2000,
-    height = 2000,
-    res = 200,
-    renderer = av_renderer()
-  )
-}
-
 # Log data
 create_data_log <- function(n = 1000, mu = 10, times = 40) {
   data <- data.frame(
@@ -92,8 +78,19 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-create_anim("Log Normal", analysis_obj, 20:40, models, asinh_scale = TRUE)
-anim_save("log_norm.mp4")
+plot_title <- "Log Normal"
+
+save_plot(
+  plot_title,
+  "media/log_norm40.png",
+  analysis_obj,
+  40,
+  models,
+  asinh_scale = TRUE
+)
+
+create_anim(plot_title, analysis_obj, 20:40, models, asinh_scale = TRUE)
+anim_save("media/log_norm.mp4")
 
 create_data_norm <- function(n = 1000, mu = 0, times = 40) {
   data <- data.frame(
@@ -119,8 +116,19 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-create_anim("Normal", analysis_obj, 20:40, models)
-anim_save("norm.mp4")
+plot_title <- "Normal"
+
+save_plot(
+  plot_title,
+  "media/norm40.png",
+  analysis_obj,
+  40,
+  models,
+  asinh_scale = FALSE
+)
+
+create_anim(plot_title, analysis_obj, 20:40, models)
+anim_save("media/norm.mp4")
 
 create_data_unif <- function(n = 1000, a = 0, b = 1, times = 40) {
   data <- data.frame(
@@ -147,5 +155,16 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
-create_anim("Uniform", analysis_obj, 20:40, models)
-anim_save("unif.mp4")
+plot_title <- "Uniform"
+
+save_plot(
+  plot_title,
+  "media/unif40.png",
+  analysis_obj,
+  40,
+  models,
+  asinh_scale = FALSE
+)
+
+create_anim(plot_title, analysis_obj, 20:40, models)
+anim_save("media/unif.mp4")
