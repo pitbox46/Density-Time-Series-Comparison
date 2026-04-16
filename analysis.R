@@ -115,5 +115,5 @@ save_plot(
   asinh_scale = TRUE
 )
 
-create_anim("Incomes CDF", analysis_obj, times_eval, models, asinh_scale = TRUE)
+create_anim("Income Quantile Plot", analysis_obj, times_eval, models, asinh_scale = TRUE)
 anim_save("media/incomes.mp4")
