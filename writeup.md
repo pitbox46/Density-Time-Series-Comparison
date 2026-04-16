@@ -121,6 +121,14 @@ This research aims to benchmark the predictive accuracy of the WAR method agains
 
 By analyzing how these competing geometries handle heavily skewed, weighted microdata, this study seeks to determine whether the computational and structural advantages of the quantile-driven Wasserstein framework yield superior forecasting accuracy when traditional assumptions of symmetry and normality break down.
 
+## Methodology
+
+To ensure a rigorous comparison between the KDE-based methods and the WAR framework, we require an objective and flexible bandwidth selection mechanism. We utilize a $k$-nearest neighbors (KNN) adaptive bandwidth, which demonstrates robust performance for heavy-tailed distributions without compromising accuracy on standard distributions.
+
+To determine the optimal parameter $k$, we employ a rolling-window forecasting approach. For a candidate value of $k$, we estimate the probability density functions and construct a one-step-ahead FPCA forecast over a sequence of time points (e.g., iteratively forecasting $t=2000$ through $t=2024$). Predictive accuracy is quantified by computing the 2-Wasserstein distance between the forecasted density and the true empirical distribution at each time step. We evaluate multiple candidate values and select the $k$ that minimizes the average Wasserstein distance across the forecasting horizon. To maintain consistency and isolate the effects of the respective transformations, this optimal $k$ is applied uniformly across all KDE-based models (Standard FPCA, LQD, and Bayes space).
+
+In practice, functional data tools require continuous KDE functions to be discretized over a finite grid. To achieve this, we evaluate the estimated densities over a pooled empirical quantile grid constructed from all observations across all time periods, utilizing probability increments of 0.001. This approach guarantees that the resulting grid spans the full support of the data at all time points. Furthermore, a quantile-based grid naturally allocates a higher density of evaluation points to regions with high probability mass while reducing resolution in the sparse tails. This strategically optimizes the trade-off between functional fidelity and computational overhead, capturing critical structural details without the cost of a uniformly dense support grid.
+
 ## Empirical Results: Synthetic Data
 
 To benchmark the predictive accuracy of the models discussed, we first evaluated their performance on synthetic density time series. For each scenario, we simulated $n = 1000$ independent observations at each discrete time point over a horizon of $T = 40$. The data was generated from three distinct distributional families—Normal, Lognormal, and Uniform—to test the flexibility of each forecasting framework under varying geometric and boundary conditions.
