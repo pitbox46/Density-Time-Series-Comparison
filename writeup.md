@@ -193,6 +193,21 @@ The WAR method, by operating directly on the empirical cumulative distribution f
 
 ## Real Data: US Individual Incomes
 
-Testing methods solely on artificial datasets may not give a good impression of realistic use. To get an impression of real world use, we test our chosen prediction methods on US individual incomes from 2010 to 2024. This data is from the US Census Bureau's Current Population Survey, an annual survey of American households. We take interest in two fields from this survey, `ptotval` and `a_ernlwt`. The first variable contains the individual income in US Dollars. We choose to manually scale these values using CPI data, so they become inflation adjusted. The second value is the survey weights that correspond to earnings questions. To ensure an accurate analysis, we opted to use the survey weights.
+Evaluating predictive models exclusively on synthetic datasets may not accurately reflect their performance in real-world applications. To assess their practical utility, we apply the forecasting frameworks to US individual income data spanning from 1998 to 2024. This microdata is sourced from the US Census Bureau's Current Population Survey (CPS), a comprehensive annual survey of American households.
 
-![Quantile predictions of several Density Time Series methods on CPS Income data. Taken at the maximum time, 40](media/unif40.png)
+Our analysis focuses on two specific variables from this survey: `ptotval` and `a_ernlwt`. The `ptotval` variable records total individual income in nominal US dollars. To ensure comparability across the temporal domain, these values were manually scaled using Consumer Price Index (CPI) data, converting them into inflation-adjusted real dollars. The `a_ernlwt` variable provides the corresponding survey weights for the earnings questions. Because the CPS utilizes a complex sampling design, incorporating these survey weights to construct weighted empirical distributions is essential to accurately reflect the true population structure.
+
+Beyond the integration of these survey weights, the forecasting methodology aligns identically with the structure utilized in the synthetic data analysis.
+
+| Model                          | Average Wasserstein Distance |
+| :----------------------------- | :--------------------------- |
+| **FDA (Standard FPCA)**        | 149754.1                     |
+| **Bayes (clr Transformation)** | 137338.2                     |
+| **LQD Transformation**         | 135701.0                     |
+| **WAR (Wasserstein AR)**       | 150603.0                     |
+
+Quantitatively, the transformation-based models (LQD and Bayes) achieved slightly lower average Wasserstein distances than the WAR model. However, visual inspection reveals that they provide a noticeably poorer structural match to the empirical data. In particular, the LQD transformation exhibits an extreme deviation from the observed quantiles at probability values below 0.5. The method struggles to capture the zero-inflated nature of the income distribution.
+
+Conversely, by bypassing the KDE step and operating directly on the weighted empirical quantiles, the WAR method visually outperforms its counterparts, successfully preserving the zero-inflated geometry of the income data.
+
+![Quantile predictions of several Density Time Series methods on CPS Income data. Taken at the maximum time, 40](media/incomes2024.png)
