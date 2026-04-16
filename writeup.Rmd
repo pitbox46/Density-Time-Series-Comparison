@@ -112,3 +112,57 @@ While previous research has benchmarked these density time series methods agains
 This research aims to benchmark the predictive accuracy of the WAR method against transformation-based models (such as LQD and CoDa) using longitudinal, individual-level income data derived from the Current Population Survey (CPS). Income distributions introduce unique functional challenges: they are heavily right-skewed, naturally bounded at zero, and feature extreme outliers that heavily distort Euclidean metrics. Furthermore, CPS data relies on complex survey weights to accurately reflect the true population structure, meaning the empirical quantiles and underlying densities are not uniform.
 
 By analyzing how these competing geometries handle heavily skewed, weighted microdata, this study seeks to determine whether the computational and structural advantages of the quantile-driven Wasserstein framework yield superior forecasting accuracy when traditional assumptions of symmetry and normality break down.
+
+## Empirical Results: Synthetic Data
+
+To benchmark the predictive accuracy of the models discussed, we first evaluated their performance on synthetic density time series. For each scenario, we simulated $n = 1000$ independent observations at each discrete time point over a horizon of $T = 40$. The data was generated from three distinct distributional families—Normal, Lognormal, and Uniform—to test the flexibility of each forecasting framework under varying geometric and boundary conditions. 
+
+Predictive accuracy was evaluated by computing the average 2-Wasserstein distance between the forecasted predictive densities and the true empirical quantiles of the holdout data.
+
+### Normal Distribution
+
+The normal distribution provides a baseline scenario with minimal structural complexity. The mean value for each time point was generated via an autoregressive process: 
+$$\mu_t = 1.1\mu_{t-1} + \epsilon_t, \quad \epsilon_t \sim N(0, 0.10^2), \quad \mu_1 = 0$$
+With the variance held constant, the distribution shifts symmetrically over time.
+
+| Model | Average Wasserstein Distance |
+| :--- | :--- |
+| **FDA (Standard FPCA)** | 0.4870 |
+| **Bayes (clr Transformation)** | 0.5177 |
+| **LQD Transformation** | 0.4939 |
+| **WAR (Wasserstein AR)** | 0.5072 |
+
+Because the normal distribution is symmetric and lacks strict boundaries (defined on the entire real line), all methods perform comparably well—even unconstrained FPCA, which is less likely to violate probability constraints when the true density is situated far from zero. In scenarios where parametric assumptions are relaxed but the underlying data exhibits normal-like behavior, the WAR model represents a highly efficient choice, as it achieves equivalent accuracy without the computational overhead of applying Kernel Density Estimation (KDE).
+
+### Lognormal Distribution
+
+To introduce right-skewness and a strict lower bound at zero, we evolved a lognormal distribution using a similar autoregressive structure for the log-mean:
+$$\mu_t = 0.98\mu_{t-1} + \epsilon_t, \quad \epsilon_t \sim N(0, 0.01^2), \quad \mu_1 = 10$$
+
+| Model | Average Wasserstein Distance |
+| :--- | :--- |
+| **FDA (Standard FPCA)** | 42084.39 |
+| **Bayes (clr Transformation)** | 41882.08 |
+| **LQD Transformation** | 42298.48 |
+| **WAR (Wasserstein AR)** | 42077.70 |
+
+Overall, the transformation-based models (LQD and Bayes) successfully capture the right-skewed geometry of the data. While the standard FPCA approach tracks the distribution reasonably well in early periods, it becomes increasingly unstable over time. This instability confirms our theoretical expectations: as the linear FPCA model attempts to forecast right-skewed data, it inevitably generates regions of negative density, severely degrading predictive accuracy. The WAR model correctly captures the functional shape of the distribution, though it exhibits a distinct location shift. This level shifting is a common artifact in non-stationary time series and can likely be resolved by forecasting the first differences of the tangent vectors rather than the raw observations.
+
+### Uniform Distribution
+
+Finally, to test how the models handle strict, hard boundaries, we simulated a uniform distribution where the bounds $a_t$ and $b_t$ independently evolve over time:
+$$a_t = 1.05a_{t-1} + \epsilon_{a,t}, \quad b_t = 1.05b_{t-1} + \epsilon_{b,t}$$
+Where $a_1 = 0$, $b_1 = 1$, and $\epsilon_{a}, \epsilon_{b} \sim N(0, 0.10^2)$.
+
+| Model | Average Wasserstein Distance |
+| :--- | :--- |
+| **FDA (Standard FPCA)** | 1.4586 |
+| **Bayes (clr Transformation)** | 1.8044 |
+| **LQD Transformation** | 1.1432 |
+| **WAR (Wasserstein AR)** | 1.1992 |
+
+The results here sharply highlight the methodological differences between the frameworks. Standard FPCA and the Bayes space approach perform remarkably poorly. The Bayes space transformation introduces extreme visual distortions, creating artificial "humps" in the early quantiles. 
+
+This failure is directly attributable to the preliminary density estimation step. Transformation models require raw data to be smoothed into PDFs via KDE before applying the transformation. When a Gaussian kernel is applied to uniform data, it forces smooth, asymptotic tails beyond the strict $[a, b]$ boundaries. The centered log-ratio (clr) transformation in Bayes space is highly sensitive to these near-zero tail probabilities, artificially amplifying them into massive structural distortions. While LQD handles this slightly better, its accuracy is inherently bottlenecked by this boundary bias.
+
+The WAR method successfully circumvents this issue entirely. By operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, the WAR model effortlessly respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth.
