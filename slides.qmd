@@ -7,6 +7,7 @@ format:
     theme: simple
     slide-number: true
     fig-align: center
+    embed-resources: true
 ---
 
 ## Limitations of Summary Statistics
