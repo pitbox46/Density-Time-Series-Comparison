@@ -1,3 +1,4 @@
+library(patchwork)
 setwd("~/School/STAT-S799/IncomesDataAnalysis/")
 source("classes.R")
 source("plot.R")
@@ -78,6 +79,7 @@ analysis_obj <- create_analaysis_obj(data)
 models <- models_func(analysis_obj)
 test_all_models(20:40, analysis_obj, models)
 
+# Create plot showing raw FPCA
 fda_obj <- analysis_obj$fda_ar(40)
 fda_obj <- data.frame(
   x = asinh(fda_obj$forecast_dens$mean$x),
@@ -96,6 +98,41 @@ ggsave(
   "media/log_norm40fpca.png",
   plot = plott,
   width = 1600,
+  height = 1600,
+  units = "px",
+  dpi = 200
+)
+
+# Create plot showing raw Bayes
+bayes_obj <- analysis_obj$bayes_ar(40)
+bayes_obj <- data.frame(
+  x = asinh(bayes_obj$forecast_dens$mean$x),
+  y = bayes_obj$forecast_raw,
+  z = bayes_obj$forecast_pdf
+)
+plott1 <- ggplot(bayes_obj, aes(x = x, y = y)) +
+  geom_line() +
+  geom_hline(yintercept = 0, color = "grey") +
+  theme_minimal() +
+  labs(
+    title = "Bayes Space - Untransformed Forecast (t = 40)",
+    x = "Inverse Hyperbolic Sine Value",
+    y = "Bayes Space Value"
+  )
+plott2 <- ggplot(bayes_obj, aes(x = x, y = z)) +
+  geom_line() +
+  geom_hline(yintercept = 0, color = "grey") +
+  theme_minimal() +
+  labs(
+    title = "Bayes Space - PDF Forecast (t = 40)",
+    x = "Inverse Hyperbolic Sine Value",
+    y = "Probability"
+  )
+plott <- plott1 + plott2
+ggsave(
+  "media/log_norm40bayes.png",
+  plot = plott,
+  width = 3200,
   height = 1600,
   units = "px",
   dpi = 200

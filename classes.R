@@ -305,7 +305,8 @@ DensityTimeSeries <- R6Class(
         dens_grid = dens_grid,
         dens_mat = dens_mat,
         forecast_pdf = forecast_pdf,
-        forecast_dens = forecast_dens
+        forecast_dens = forecast_dens,
+        forecast_raw = forecast_pdf
       )
     },
     # Predicts the target year using a model built from all years prior
