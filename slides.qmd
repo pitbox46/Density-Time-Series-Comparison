@@ -1,0 +1,264 @@
+---
+title: "Density Time Series using Wasserstein Autoregression"
+author: "Mason Griswold"
+date: today
+format: 
+  revealjs:
+    theme: simple
+    slide-number: true
+    fig-align: center
+---
+
+## Limitations of Summary Statistics
+
+Traditionally, income distributions and longitudinal wealth dynamics are analyzed using aggregate statistics:
+
+* Mean and Median
+* Variance
+* Gini Coefficient
+
+These scalar metrics discard the structural shape of the underlying data, obscuring phenomena like shifting multimodality, heavy right-skewness, and zero-inflation.
+
+::: {.notes}
+Start by explaining why standard statistics are insufficient for this specific data. Economists often use scalars, but to truly understand inequality or income dynamics, we need to model and forecast the entire distribution.
+:::
+
+---
+
+## Functional Data Analysis (FDA)
+
+Instead of treating data as a finite vector, FDA models the domain as a continuum.
+
+* The entire continuous curve is treated as a single mathematical observation.
+* This allows time-series forecasting techniques to be applied to shapes rather than scalars.
+* Given a sequence of past probability density functions (PDFs), we aim to forecast the PDF for the next time step.
+
+::: {.notes}
+Introduce the core concept of FDA. Explain that in this framework, one curve equals one data point.
+:::
+
+---
+
+## Dimension Reduction via FPCA
+
+A continuous curve possesses infinite dimensions, making traditional forecasting models (like Vector Autoregression) difficult to apply directly.
+
+Functional Principal Component Analysis (FPCA) compresses the data by separating functions into:
+
+1. Basis Functions: The static, overarching shapes of the dataset.
+2. Principal Component Scores: Scalar weights indicating the presence of each shape at time t.
+
+::: {.notes}
+Anchor FDA to standard PCA, which the audience knows. We compress the curve, forecast the compressed scores, and reconstruct the curve.
+:::
+
+---
+
+## FPCA vs PCA
+
+Standard PCA (Discrete Vectors):
+$$ \mathbf{x}_i = \boldsymbol{\mu} + \sum_{k=1}^K \xi_{ik} \mathbf{v}_k $$
+
+Functional PCA (Continuous Curves):
+$$ f_i(t) = \mu(t) + \sum_{k=1}^K \xi_{ik} \phi_k(t) $$
+
+::: {.notes}
+Use this slide to reassure the audience. 
+Point to the top equation: In standard PCA, we reconstruct a vector $\mathbf{x}_i$ using a mean vector $\boldsymbol{\mu}$, scalar scores $\xi_{ik}$, and eigenvectors $\mathbf{v}_k$.
+Point to the bottom equation: In FPCA, the exact same logic applies. The vector becomes a continuous function $f_i(t)$, the mean vector becomes a mean function $\mu(t)$, and the eigenvectors become continuous eigenfunctions $\phi_k(t)$. The scores ($\xi_{ik}$) remain simple scalars that we can forecast!
+:::
+
+---
+
+## Probability Constraints in FDA
+
+Standard FPCA works well for unconstrained data, such as temperature curves. However, probability density functions have strict mathematical requirements:
+
+1. They must be non-negative ($f \ge 0$)
+2. They must integrate to one ($\int f = 1$)
+
+FPCA relies on linear combinations, so forecasted densities frequently dip below zero or fail to integrate to 1.
+
+::: {.notes}
+Explain why we can't just use FPCA. It's a linear model, but PDFs have non-linear constraints.
+:::
+
+---
+
+## FPCA Failure
+
+![FPCA's prediction on log-normal data](media/log_norm40fpca)
+
+---
+
+## Transformation-Based Approaches
+
+To address these constraints, recent methods map densities into unconstrained spaces where linear operations are valid.
+
+* Log Quantile Density (LQD) transforms the density and maps it to a standard Hilbert space.
+* Centered Log-Ratio (clr) maps densities into a Bayes space.
+
+After mapping the data, we apply FPCA, forecast the scores, and use the inverse transformation to recover a valid density.
+
+::: {.notes}
+Introduce the current standard solutions in the literature. They solve the constraint problem by doing the math in a transformed space.
+:::
+
+---
+
+## The Kernel Density Estimation Requirement
+
+Transformation models require discrete data points to be converted into continuous PDFs before the transformation can be applied. 
+
+This conversion typically relies on Kernel Density Estimation (KDE).
+
+* KDE requires subjective bandwidth tuning.
+* KDE forces smooth, asymptotic tails. This creates structural biases when the underlying data has strict boundaries or zero-inflation.
+
+::: {.notes}
+Highlight the limitation of transformation models. They rely on KDE, which bleeds probability mass past natural boundaries.
+:::
+
+---
+
+## Wasserstein Space
+
+An alternative approach treats densities as objects on a nonlinear manifold using the 2-Wasserstein metric.
+
+In one dimension, the Wasserstein distance evaluates the distance between empirical quantile functions:
+
+$$W_2(f, g) = \left( \int_0^1 (Q_f(u) - Q_g(u))^2 \, du \right)^{1/2}$$
+
+This allows the model to be built directly on empirical quantiles or CDFs, completely avoiding the KDE step.
+
+::: {.notes}
+Introduce the Wasserstein metric. Emphasize that because the 1D case relies on quantiles, we don't need a smoothed PDF, allowing us to bypass KDE entirely.
+:::
+
+---
+
+## Wasserstein Autoregression (WAR)
+
+Because the Wasserstein space is a curved manifold, linear autoregression cannot be applied directly. The forecasting framework proceeds as follows:
+
+1. Compute the Wasserstein Fréchet mean to serve as a reference point.
+2. Use a logarithmic map to project the densities into a flat, linear tangent space.
+3. Fit an autoregressive model to the vectors in this flat space.
+4. Use an exponential map to project the forecasted vector back onto the density manifold.
+
+::: {.notes}
+Explain the geometry conceptually. We find a center, flatten the space around it, run our linear forecast there, and map it back to the curved space.
+:::
+
+---
+
+## Synthetic Baseline: Normal Distribution
+
+We generated synthetic time-series data ($N=1000, T=40$) to test these frameworks. 
+
+The Normal distribution serves as our baseline:
+
+* It is symmetric and lacks strict boundaries.
+* Unconstrained FPCA succeeds because the data is centered safely away from zero.
+* Modern frameworks are expected to handle this easily.
+
+::: {.notes}
+Introduce the baseline. Because the data is easy and unbounded, everything should work nicely here. 
+:::
+
+---
+
+## Normal Distribution Results
+
+![Normal Quantile Predictions](media/norm.mp4){autoplay="true" loop="true" muted="true" width="70%"}
+
+::: {.notes}
+Point out that all models overlap nicely. WAR is a highly efficient choice here because it achieves equivalent accuracy without the computational overhead of KDE.
+:::
+
+---
+
+## Handling Skew: Lognormal Distribution
+
+To test right-skewness and a strict lower bound at zero, we used a Lognormal distribution with a shifting mean.
+
+* Standard FPCA becomes unstable over time due to the shifting domain.
+* Transformation methods (LQD, Bayes) successfully capture the right-skewed geometry. 
+* WAR correctly captures the functional shape but exhibits a slight location shift.
+
+::: {.notes}
+Explain the transition to harder data. Standard linear methods like FPCA break down, but the modern methods survive. Mention that WAR's location shift is common for non-stationary data and could be fixed with differencing.
+:::
+
+---
+
+## Lognormal Distribution Results
+
+![Log-Normal Quantile Predictions](media/log_norm.mp4){autoplay="true" loop="true" muted="true" width="70%"}
+
+::: {.notes}
+Show how standard FPCA struggles while the transformation methods and WAR capture the general right-skewed shape.
+:::
+
+---
+
+## Boundary Effects: Uniform Distribution
+
+To test strict, hard boundaries, we simulated a Uniform distribution where the lower and upper bounds independently evolve over time.
+
+* This scenario tests how models handle sudden, strict drop-offs in density.
+* Because transformation models are forced to rely on KDE, they are naturally predisposed to smooth past these strict edges.
+
+::: {.notes}
+Set up the Uniform distribution as the ultimate test for boundary bias. Remind them of the KDE flaw you mentioned earlier.
+:::
+
+---
+
+## Uniform Distribution Results
+
+![Uniform Quantile Predictions](media/unif.mp4){autoplay="true" loop="true" muted="true" width="70%"}
+
+::: {.notes}
+Point out the Bayes space distortions (the humps). Explain that KDE forced smooth tails past the strict boundaries, and the log-transformations violently amplified those errors. WAR respects the boundaries effortlessly because it uses raw quantiles!
+:::
+
+---
+
+## Real-World Application: US Income Data
+
+Evaluating models solely on synthetic data isn't enough. We applied these models to US individual incomes from the Current Population Survey (2010–2024).
+
+Income data presents massive modeling challenges:
+
+* Heavily right-skewed.
+* Strict zero lower bound.
+* Highly zero-inflated.
+* Requires complex survey weights to accurately reflect the population structure.
+
+::: {.notes}
+Transition to the real-world application. Reiterate the challenges of income data that make it uniquely difficult to model compared to synthetic curves.
+:::
+
+---
+
+## US Income Data Results
+
+![CPS Income Quantile Predictions](media/incomes.mp4){autoplay="true" loop="true" muted="true" width="70%"}
+
+::: {.notes}
+Walk through the graph. The LQD transformation deviates heavily below the 50th percentile because KDE struggles with the zero-inflation. WAR visually outperforms the others by preserving the true socioeconomic structure of the data.
+:::
+
+---
+
+## Conclusion
+
+* Standard linear models violate probability constraints when forecasting densities.
+* Transformation models satisfy these constraints but rely on KDE, which introduces structural boundary bias.
+* The WAR model bypasses KDE by operating on empirical quantiles, providing a structurally faithful method for bounded, skewed, and zero-inflated microdata.
+* Future work will explore differenced WAR models to address non-stationary level shifts.
+
+::: {.notes}
+Summarize the findings. For researchers analyzing strictly bounded or complex weighted data, the WAR model offers a highly effective forecasting solution.
+:::
