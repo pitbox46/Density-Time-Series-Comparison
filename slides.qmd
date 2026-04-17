@@ -106,6 +106,12 @@ Introduce the current standard solutions in the literature. They solve the const
 
 ---
 
+## Bayes Space Example
+
+![Comparison of untransformed and transformed Bayes space prediction](media/log_norm40bayes.png)
+
+---
+
 ## The Kernel Density Estimation Requirement
 
 Transformation models require discrete data points to be converted into continuous PDFs before the transformation can be applied. 
