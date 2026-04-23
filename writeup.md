@@ -14,7 +14,7 @@ Functional Data Analysis (FDA) provides the tools to analyze sequences of contin
 However, classical linear FDA methods fail when applied to probability density functions (PDFs) because they do not naturally enforce the requirements that densities remain non-negative and integrate to one.
 Petersen et al. (2022) addressed this limitation by detailing specialized nonlinear transformations and geometric spaces that allow PDFs to be analyzed as valid data objects without violating these constraints.
 
-Building on the time series frameworks discussed in Petersen (2022), this paper benchmarks these methods against complex, real-world data.
+Building on the time series frameworks discussed in Petersen et al. (2022), this paper benchmarks these methods against complex, real-world data.
 While previous studies often evaluate density time series models on simulated or well-behaved datasets, we apply these frameworks to individual income data from the US Current Population Survey (CPS).
 This data presents significant modeling challenges due to its extreme skewness and zero-inflation.
 
@@ -29,18 +29,18 @@ For instance, recording a subject's age, height, and weight yields an observatio
 However, in many applications, the underlying data-generating process is better represented as an entire continuous function.
 For example, a subject's height recorded over several years represents a continuous growth curve.
 While traditional time-series analysis could be applied to this data, it inherently assumes discrete time intervals.
-Functional Data Analysis (FDA), by contrast, models the domain as a continuum, allowing for inference at arbitrary intermediate values without being constrained to discrete observation points.
+Functional Data Analysis (FDA), by contrast, models the domain as a continuum, allowing for inference at arbitrary intermediate values without being constrained to discrete observation points (Ramsay and Silverman, 2005).
 
 In practice, observed data is finite.
 Because researchers rarely have the ability to measure a process continuously, a fundamental step in FDA is converting discrete data points into a functional curve defined over a continuum.
-This is typically achieved using basis expansions, such as splines or Fourier series.
+This is typically achieved using basis expansions, such as splines or Fourier series (Ramsay and Silverman, 2005).
 A significant advantage of FDA is the ability to easily incorporate shape constraints.
 For instance, human growth curves between ages 0 and 5 are strictly non-decreasing.
 By enforcing this constraint during the smoothing process, FDA prevents the estimation of physically impossible functions that might otherwise arise from measurement error.
 
 ### Mathematical Framework and Construction
 
-In standard FDA, we restrict our observed functions $f_i$ to a separable Hilbert space $\mathcal{H}$, most commonly the space of square-integrable functions, $L^2$.
+In standard FDA, we restrict our observed functions $f_i$ to a separable Hilbert space $\mathcal{H}$, most commonly the space of square-integrable functions, $L^2$ (Ramsay and Silverman, 2005).
 Further restrictions depend on the specific analytical goals of the study.
 
 Given a sample of $N$ underlying functions, each observation typically begins as a set of discrete data pairs $(x_{ij}, Y_{ij})$, where $j = 1, \dots, m_i$ represents the discrete measurements for the $i$-th subject.
@@ -50,7 +50,7 @@ It is important to note that $\hat{f}_i(t)$ serves as an estimate of the true, u
 ### Functional Principal Component Analysis
 
 Once the functional approximations $\hat{f}_i(t)$ are constructed in a Hilbert space, exploratory analysis is often necessary to identify primary sources of variability and reduce the sample's dimensionality.
-Functional Principal Component Analysis (FPCA) is the standard method for this task.
+Functional Principal Component Analysis (FPCA) is the standard method for this task (Ramsay and Silverman, 2005).
 
 FPCA relies on the Karhunen-Loève decomposition of a random functional element.
 For a functional variable $Y(t)$ defined over a domain $\mathcal{T}$ with mean function $\nu(t) = \mathbb{E}[Y(t)]$, the decomposition is expressed as:
@@ -67,7 +67,7 @@ The scores are calculated by projecting the centered functions onto the basis fu
 $$\xi_j = \int_{\mathcal{T}} \{Y(t) - \nu(t)\}\phi_j(t)dt$$
 
 By truncating this infinite sum to a finite number of $J$ components, we achieve dimension reduction.
-Under the standard $L^2$ metric, this finite truncation is mathematically optimal in terms of the total variance explained.
+Under the standard $L^2$ metric, this finite truncation is mathematically optimal in terms of the total variance explained (Ramsay and Silverman, 2005).
 
 Because of its computational simplicity and highly interpretable outputs, FPCA is incredibly powerful for standard, unconstrained functional data.
 However, when our functional data takes the form of objects with strict geometric rules, applying standard FPCA directly introduces significant mathematical contradictions.
@@ -103,26 +103,26 @@ Traditional linear FDA methods do not intrinsically respect these boundaries.
 Because FPCA permits arbitrary linear combinations of principal component scores and basis functions, the resulting functional modes of variation are not guaranteed to remain bona fide probability density functions.
 Consequently, reconstructing curves via standard FPCA can easily violate these fundamental probability constraints.
 
-To overcome this limitation and properly model densities as data objects, modern functional data analysis relies on mapping these densities into representation spaces where linear methods become mathematically coherent.
+To overcome this limitation and properly model densities as data objects, modern functional data analysis relies on mapping these densities into representation spaces where linear methods become mathematically coherent (Petersen et al., 2022).
 There are two primary schools of thought for achieving this: Transformation Approaches and Object-Oriented (Geometric) Approaches.
 
 ### Transformation Approaches
 
 The transformation approach relies on applying an invertible mapping $\psi$ that projects a density function $f$ into a standard functional Hilbert space, such as $L^2$.
 Once in this representation space, classical linear FDA techniques (like FPCA or linear regression) can be safely applied to the transformed curves.
-The model outputs are then mapped back to the original density space $\mathcal{D}$ using the inverse transformation $\psi^{-1}$, which natively enforces the probability density constraints.
+The model outputs are then mapped back to the original density space $\mathcal{D}$ using the inverse transformation $\psi^{-1}$, which natively enforces the probability density constraints (Petersen et al., 2022).
 
 Two prevalent transformations include:
 
-- Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$.
-  The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1.
-  For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
-- Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information.
-  The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
+- Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$ (Petersen et al., 2022).
+    The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1.
+    For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
+- Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information (Petersen et al., 2022).
+    The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
 
 ### Object-Oriented and Geometric Approaches (Wasserstein Space)
 
-Alternatively, the object-oriented approach relies on the intrinsic geometric structure of the densities by utilizing non-Euclidean metrics that induce a manifold structure, such as the Fisher-Rao or Wasserstein metrics.
+Alternatively, the object-oriented approach relies on the intrinsic geometric structure of the densities by utilizing non-Euclidean metrics that induce a manifold structure, such as the Fisher-Rao or Wasserstein metrics (Petersen et al., 2022).
 
 When analyzing density time series, the 2-Wasserstein metric, an optimal transport distance that measures the cost of transforming one probability distribution into another, is highly effective.
 Because the Wasserstein space $\mathcal{W}_2$ is nonlinear, linear time series models like autoregression cannot be applied directly to the density functions.
@@ -132,10 +132,10 @@ This is achieved by operating within the tangent space.
 The general framework for this geometric projection proceeds as follows:
 
 1. The Fréchet Mean: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean.
-   This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
+      This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
 2. The Logarithmic Map: We use a logarithmic map to "lift" the observed densities from the nonlinear manifold into the tangent space anchored at the Fréchet mean.
 3. Linear Modeling: Because the tangent space is a Hilbert space, it is perfectly flat and linear.
-   Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
+      Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
 4. The Exponential Map: Finally, we apply an exponential map to project our functional forecasts or principal components back from the tangent space onto the density manifold, natively recovering valid probability density functions.
 
 ## Forecasting Methods for Density Time Series
@@ -146,14 +146,14 @@ When observing a density time series $\{f_1, f_2, ..., f_n\}$, the goal is to fo
 Recent literature has proposed a variety of models to tackle this, each with unique advantages depending on the data structure:
 
 - Parametric Approaches (ST): Rather than modeling the full functional curve, this method assumes the data follows a specific parametric family, such as a skewed $t$-distribution.
-  The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector.
-  This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
+    The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector.
+    This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
 - Dynamic Functional Principal Component Regression (HC): This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR.
-  Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
-- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied.
-  The inverse transformation is then applied to recover the forecasted density.
-- Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation.
-  FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
+    Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
+- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied (Petersen et al., 2022).
+    The inverse transformation is then applied to recover the forecasted density.
+- Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation (Petersen et al., 2022).
+    FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
 
 While transformation-based methods like CoDa and LQD natively enforce the probability constraints of the predicted densities, they traditionally require the preliminary step of generating smoothed probability density functions (e.g., via Kernel Density Estimation) prior to transformation and analysis.
 
@@ -167,7 +167,7 @@ The forecasting process proceeds as follows:
 1. The model computes a Wasserstein Fréchet mean density, $f_\oplus$, to serve as the stationary reference point for the time series.
 2. Observed densities $f_t$ are lifted into the tangent space at $f_\oplus$ using the logarithmic map, yielding $V_t = \text{Log}_{f_\oplus}(f_t)$.
 3. An autoregressive model is formulated within this linear tangent space.
-   For a WAR($p$) model with scalar coefficients, the forecast is constructed via $\hat{V}_{t+1}(u) = \sum_{j=1}^p \hat{\phi}_j V_{t+1-j}(u)$, where $\hat{\phi}_j$ are the estimated autoregressive parameters.
+      For a WAR($p$) model with scalar coefficients, the forecast is constructed via $\hat{V}_{t+1}(u) = \sum_{j=1}^p \hat{\phi}_j V_{t+1-j}(u)$, where $\hat{\phi}_j$ are the estimated autoregressive parameters.
 4. The forecasted tangent vector $\hat{V}_{t+1}$ is projected back onto the density manifold using the exponential map to yield the final density forecast $\hat{f}_{t+1}$.
 
 While extensions of this model, such as Fully Functional WAR (FF-WAR), utilize continuous operator kernels instead of scalar coefficients, empirical evaluations often show that simpler models with scalar coefficients perform better for prediction tasks.
