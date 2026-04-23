@@ -1,6 +1,6 @@
 ---
 title: "Density Time Series using Wasserstein Autoregression"
-author: "Mason Griswold"
+author: "Mason Griswold (Advised by Julia Fukuyama)"
 date: "2026-04-16"
 ---
 
