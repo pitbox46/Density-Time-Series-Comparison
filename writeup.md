@@ -4,7 +4,7 @@ author: "Mason Griswold (Advised by Julia Fukuyama)"
 date: "2026-04-16"
 ---
 
-The code related to this project can be found at [https://github.com/pitbox46/Density-Time-Series-Comparison]
+The code related to this project can be found at [github.com/pitbox46/Density-Time-Series-Comparison](https://github.com/pitbox46/Density-Time-Series-Comparison)
 
 ## Introduction
 
