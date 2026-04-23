@@ -352,6 +352,8 @@ For researchers analyzing strictly bounded, heavily skewed, or complex weighted 
 
 Delicado, P. ‘Dimensionality Reduction When Data Are Density Functions’. Computational Statistics & Data Analysis, vol. 55, no. 1, 2011, pp. 401–420, <https://doi.org/10.1016/j.csda.2010.05.008>.
 
+Horta, Eduardo, and Flavio Ziegelmann. ‘Dynamics of Financial Returns Densities: A Functional Approach Applied to the Bovespa Intraday Index’. International Journal of Forecasting, vol. 34, no. 1, 2018, pp. 75–88, <https://doi.org/10.1016/j.ijforecast.2017.08.001>.
+
 Kokoszka, Piotr, et al. ‘Forecasting of Density Functions with an Application to Cross-Sectional and Intraday Returns’. International Journal of Forecasting, vol. 35, no. 4, 2019, pp. 1304–1317, <https://doi.org/10.1016/j.ijforecast.2019.05.007>.
 
 Petersen, Alexander, and Hans-Georg Müller. ‘Functional Data Analysis for Density Functions by Transformation to a Hilbert Space’. The Annals of Statistics, vol. 44, no. 1, Institute of Mathematical Statistics, 2016, pp. 183–218, <https://doi.org/10.1214/15-AOS1363>.
