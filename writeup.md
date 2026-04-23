@@ -131,7 +131,7 @@ This is achieved by operating within the tangent space.
 
 The general framework for this geometric projection outlined in Zhang et al. 2020 proceeds as follows:
 
-1. The Fréchet Mean $f_\bigoplus^d_W$: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean.
+1. The Fréchet Mean $f_{\bigoplus}^{d_W}$: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean.
    This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
    Note that Petersen et al. (2022) have found that the Fréchet mean is simple to calculate under the Wasserstein metric.
 2. The Logarithmic Map: Observed densities $f_t$ are lifted into the tangent space at $f_\oplus$ using the logarithmic map, yielding $V_t = \text{Log}_{f_\oplus}(f_t)$.
