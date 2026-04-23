@@ -110,11 +110,11 @@ There are two primary schools of thought for achieving this: Transformation Appr
 
 The transformation approach relies on applying an invertible mapping $\psi$ that projects a density function $f$ into a standard functional Hilbert space, such as $L^2$.
 Once in this representation space, classical linear FDA techniques (like FPCA or linear regression) can be safely applied to the transformed curves.
-The model outputs are then mapped back to the original density space $\mathcal{D}$ using the inverse transformation $\psi^{-1}$, which natively enforces the probability density constraints (Petersen et al., 2022).
+The model outputs are then mapped back to the original density space $\mathcal{D}$ using the inverse transformation $\psi^{-1}$, which natively enforces the probability density constraints (Petersen and Muller, 2016).
 
 Two prevalent transformations include:
 
-- Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$ (Petersen et al., 2022).
+- Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$ (Petersen and Muller, 2016).
     The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1.
     For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
 - Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information (Petersen et al., 2022).
@@ -150,7 +150,7 @@ Recent literature has proposed a variety of models to tackle this, each with uni
     This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
 - Dynamic Functional Principal Component Regression (HC): This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR.
     Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
-- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied (Petersen et al., 2022).
+- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied (Petersen et al., 2016).
     The inverse transformation is then applied to recover the forecasted density.
 - Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation (Petersen et al., 2022).
     FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
@@ -159,7 +159,7 @@ While transformation-based methods like CoDa and LQD natively enforce the probab
 
 ### The Wasserstein Autoregressive (WAR) Model
 
-An increasingly prominent alternative for forecasting density time series leverages the object-oriented geometry of the Wasserstein space, specifically through the Wasserstein Autoregressive (WAR) model.
+An attractive alternative for forecasting density time series leverages the object-oriented geometry of the Wasserstein space, specifically through the Wasserstein Autoregressive (WAR) model developed by Petersen et al. (2022).
 
 Rather than transforming the density functions into an unconstrained Hilbert space, the WAR model operates directly on the tangent space of the Wasserstein manifold.
 The forecasting process proceeds as follows:
@@ -218,7 +218,7 @@ $$
 W_2(f, g) = \left( \int_0^1 (Q_f(u) - Q_g(u))^2 \, du \right)^{1/2}
 $$
 
-$Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively.
+$Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively (Petersen et al. 2022).
 
 ## Empirical Results: Synthetic Data
 
@@ -352,3 +352,13 @@ Future research should explore differenced Wasserstein autoregressive models to 
 Additionally, expanding this comparative framework to include Fully Functional WAR (FF-WAR) models could refine our understanding of optimal transport geometries in time series forecasting.
 
 For researchers analyzing strictly bounded, heavily skewed, or complex weighted data, the quantile-driven WAR model offers a structurally faithful and computationally efficient forecasting solution.
+
+## References
+
+Delicado, P. ‘Dimensionality Reduction When Data Are Density Functions’. Computational Statistics & Data Analysis, vol. 55, no. 1, 2011, pp. 401–420, <https://doi.org/10.1016/j.csda.2010.05.008>.
+
+Petersen, Alexander, and Hans-Georg Müller. ‘Functional Data Analysis for Density Functions by Transformation to a Hilbert Space’. The Annals of Statistics, vol. 44, no. 1, Institute of Mathematical Statistics, 2016, pp. 183–218, <https://doi.org/10.1214/15-AOS1363>.
+
+Petersen, Alexander, et al. ‘Modeling Probability Density Functions as Data Objects’. Econometrics and Statistics, vol. 21, 2022, pp. 159–178, <https://doi.org/10.1016/j.ecosta.2021.04.004>.
+
+Ramsay, James O., and Bernard W. Silverman. Functional Data Analysis. Springer, 1997.
