@@ -12,7 +12,7 @@ Capturing these dynamics requires moving beyond summary statistics and modeling 
 
 Functional Data Analysis (FDA) provides the tools to analyze sequences of continuous curves.
 However, classical linear FDA methods fail when applied to probability density functions (PDFs) because they do not naturally enforce the requirements that densities remain non-negative and integrate to one.
-Petersen et al. (2022) addressed this limitation by detailing specialized nonlinear transformations and geometric spaces that allow PDFs to be analyzed as valid data objects without violating these constraints.
+Zhang et al. (2020) addressed this limitation by detailing specialized nonlinear transformations and geometric spaces that allow PDFs to be analyzed as valid data objects without violating these constraints.
 
 Building on the time series frameworks discussed in Petersen et al. (2022), this paper benchmarks these methods against complex, real-world data.
 While previous studies often evaluate density time series models on simulated or well-behaved datasets, we apply these frameworks to individual income data from the US Current Population Survey (CPS).
@@ -115,10 +115,10 @@ The model outputs are then mapped back to the original density space $\mathcal{D
 Two prevalent transformations include:
 
 - Log Quantile Density (LQD) Transformation: For a density $f$ with a corresponding quantile function $Q_f$, the LQD transformation is defined as $\psi_{LQD}(f)(t) = -\log\{f \circ Q_f(t)\}$ for $t \in [0,1]$ (Petersen and Muller, 2016).
-    The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1.
-    For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
-- Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information (Petersen et al., 2022).
-    The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
+  The representation space is $L^2[0,1]$, and the mathematical formulation of its inverse guarantees that the reconstructed function has a domain of $[0,1]$ and strictly integrates to 1.
+  For densities without a common support (such as shifting income brackets over time), a modified LQD transformation can incorporate a location shift.
+- Centered Log-Ratio (clr) Transformation: Rooted in compositional data analysis, this maps densities into a Bayes space, treating the probability density as carrying relative, rather than absolute, information (Kokoska et al., 2019).
+  The clr transformation maps the densities to a subspace of $L^2$ containing functions that integrate to zero.
 
 ### Object-Oriented and Geometric Approaches (Wasserstein Space)
 
@@ -126,17 +126,18 @@ Alternatively, the object-oriented approach relies on the intrinsic geometric st
 
 When analyzing density time series, the 2-Wasserstein metric, an optimal transport distance that measures the cost of transforming one probability distribution into another, is highly effective.
 Because the Wasserstein space $\mathcal{W}_2$ is nonlinear, linear time series models like autoregression cannot be applied directly to the density functions.
-Instead, we must exploit the differential geometry of the manifold by mapping the densities into a flat, linear space where traditional functional tools become mathematically valid.
+Instead, we can find a method to map the densities into a flat, linear space where traditional functional tools become mathematically valid.
 This is achieved by operating within the tangent space.
 
-The general framework for this geometric projection proceeds as follows:
+The general framework for this geometric projection outlined in Zhang et al. 2020 proceeds as follows:
 
-1. The Fréchet Mean: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean.
-      This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
-2. The Logarithmic Map: We use a logarithmic map to "lift" the observed densities from the nonlinear manifold into the tangent space anchored at the Fréchet mean.
+1. The Fréchet Mean $f_\bigoplus^d_W$: We first compute a central reference point for the sample of densities, known as the Wasserstein Fréchet mean.
+   This minimizes the expected squared Wasserstein distance to all random densities in the sample and serves as our point of tangency.
+   Note that Petersen et al. (2022) have found that the Fréchet mean is simple to calculate under the Wasserstein metric.
+2. The Logarithmic Map: Observed densities $f_t$ are lifted into the tangent space at $f_\oplus$ using the logarithmic map, yielding $V_t = \text{Log}_{f_\oplus}(f_t)$.
 3. Linear Modeling: Because the tangent space is a Hilbert space, it is perfectly flat and linear.
-      Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
-4. The Exponential Map: Finally, we apply an exponential map to project our functional forecasts or principal components back from the tangent space onto the density manifold, natively recovering valid probability density functions.
+   Here, operations such as Tangent Space FPCA (Log-FPCA) or Wasserstein Autoregression (WAR) can be safely applied to the tangent vectors without violating probability constraints.
+4. The Exponential Map: To transform a vector $V_*$ from this tangent space back into the Wasserstein space to become a density $f_*$, we use the exponential map.
 
 ## Forecasting Methods for Density Time Series
 
@@ -146,37 +147,31 @@ When observing a density time series $\{f_1, f_2, ..., f_n\}$, the goal is to fo
 Recent literature has proposed a variety of models to tackle this, each with unique advantages depending on the data structure:
 
 - Parametric Approaches (ST): Rather than modeling the full functional curve, this method assumes the data follows a specific parametric family, such as a skewed $t$-distribution.
-    The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector.
-    This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
-- Dynamic Functional Principal Component Regression (HC): This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR.
-    Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
-- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied (Petersen et al., 2016).
-    The inverse transformation is then applied to recover the forecasted density.
-- Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation (Petersen et al., 2022).
-    FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
+  The parameters of the distribution are estimated at each time step, and traditional vector autoregression (VAR) is used to forecast the parameter vector.
+  This is computationally efficient but highly restrictive if the true distributions exhibit complex, non-parametric behaviors.
+- Dynamic Functional Principal Component Regression (HC): This method applies FPCA to the densities directly using a specific kernel and forecasts the resulting scores using VAR (Horta and Ziegelmann, 2018).
+  Because this linear approach does not natively respect density constraints, any negative predicted values are artificially replaced by zero, and the reconstructed function is standardized to integrate to one.
+- Log Quantile Density (LQD) Transformation: This relies on the LQD mapping to transport the densities into a Hilbert space where a multitude of functional data tools can be applied (Petersen and Muller, 2016).
+  The inverse transformation is then applied to recover the forecasted density.
+- Compositional Data Analysis (Bayes space): Rooted in the Bayes space geometry, this approach removes constraints by applying a centered log-ratio (clr) transformation (Kokoska et al. 2019).
+  FPCA is applied to the transformed curves, and a time series model is fitted to the resulting coefficients.
 
 While transformation-based methods like CoDa and LQD natively enforce the probability constraints of the predicted densities, they traditionally require the preliminary step of generating smoothed probability density functions (e.g., via Kernel Density Estimation) prior to transformation and analysis.
 
 ### The Wasserstein Autoregressive (WAR) Model
 
-An attractive alternative for forecasting density time series leverages the object-oriented geometry of the Wasserstein space, specifically through the Wasserstein Autoregressive (WAR) model developed by Petersen et al. (2022).
+Rather than transforming the density functions into an unconstrained Hilbert space, the WAR model described by Zhang et al. (2020) operates directly on the tangent space of the Wasserstein manifold.
 
-Rather than transforming the density functions into an unconstrained Hilbert space, the WAR model operates directly on the tangent space of the Wasserstein manifold.
-The forecasting process proceeds as follows:
+Once our densities are lifted into our linear tangent space, we may use an autoregressive model as such:
 
-1. The model computes a Wasserstein Fréchet mean density, $f_\oplus$, to serve as the stationary reference point for the time series.
-2. Observed densities $f_t$ are lifted into the tangent space at $f_\oplus$ using the logarithmic map, yielding $V_t = \text{Log}_{f_\oplus}(f_t)$.
-3. An autoregressive model is formulated within this linear tangent space.
-      For a WAR($p$) model with scalar coefficients, the forecast is constructed via $\hat{V}_{t+1}(u) = \sum_{j=1}^p \hat{\phi}_j V_{t+1-j}(u)$, where $\hat{\phi}_j$ are the estimated autoregressive parameters.
-4. The forecasted tangent vector $\hat{V}_{t+1}$ is projected back onto the density manifold using the exponential map to yield the final density forecast $\hat{f}_{t+1}$.
-
-While extensions of this model, such as Fully Functional WAR (FF-WAR), utilize continuous operator kernels instead of scalar coefficients, empirical evaluations often show that simpler models with scalar coefficients perform better for prediction tasks.
+1. For a WAR($p$) model with scalar coefficients, the forecast is constructed via $\hat{V}_{t+1}(u) = \sum_{j=1}^p \hat{\phi}_j V_{t+1-j}(u)$, where $\hat{\phi}_j$ are the estimated autoregressive parameters.
+2. The forecasted tangent vector $\hat{V}_{t+1}$ is projected back onto the density manifold using the exponential map to yield the final density forecast $\hat{f}_{t+1}$.
 
 ### Computational and Structural Advantages of WAR
 
 The primary advantage of the WAR framework stems from the intrinsic properties of the 2-Wasserstein metric.
-In one dimension, the Wasserstein distance between two measures is uniquely defined by the $L^2$ distance between their respective quantile functions.
-Because the entire geometric structure of $\mathcal{W}_2$ (including the Fréchet mean, tangent spaces, and logarithmic maps) can be expressed in terms of optimal transport maps between quantile functions, the WAR method effectively bypasses the need for explicit probability density functions during the modeling phase.
+In one dimension, the Wasserstein distance between two measures is uniquely defined by the $L^2$ distance between their respective quantile functions (Zhang et al. 2020).
+Because the entire geometric structure of $\mathcal{W}_2$ (including the Fréchet mean, tangent spaces, and logarithmic maps) can be expressed in terms of optimal transport maps between quantile functions, the WAR method effectively bypasses the need for explicit probability density functions during the modeling phase (Peterset et al. 2022).
 
 This presents significant computational and methodological advantages over transformation-based methods like LQD or CoDa.
 Specifically, the WAR model can be executed directly on cumulative distribution functions (CDFs) or empirical quantile grids.
@@ -218,7 +213,7 @@ $$
 W_2(f, g) = \left( \int_0^1 (Q_f(u) - Q_g(u))^2 \, du \right)^{1/2}
 $$
 
-$Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively (Petersen et al. 2022).
+$Q_f, Q_g$ are the quantile functions for $f$ and $g$ respectively (Zhang et al. 2020).
 
 ## Empirical Results: Synthetic Data
 
@@ -357,8 +352,12 @@ For researchers analyzing strictly bounded, heavily skewed, or complex weighted 
 
 Delicado, P. ‘Dimensionality Reduction When Data Are Density Functions’. Computational Statistics & Data Analysis, vol. 55, no. 1, 2011, pp. 401–420, <https://doi.org/10.1016/j.csda.2010.05.008>.
 
+Kokoszka, Piotr, et al. ‘Forecasting of Density Functions with an Application to Cross-Sectional and Intraday Returns’. International Journal of Forecasting, vol. 35, no. 4, 2019, pp. 1304–1317, <https://doi.org/10.1016/j.ijforecast.2019.05.007>.
+
 Petersen, Alexander, and Hans-Georg Müller. ‘Functional Data Analysis for Density Functions by Transformation to a Hilbert Space’. The Annals of Statistics, vol. 44, no. 1, Institute of Mathematical Statistics, 2016, pp. 183–218, <https://doi.org/10.1214/15-AOS1363>.
 
 Petersen, Alexander, et al. ‘Modeling Probability Density Functions as Data Objects’. Econometrics and Statistics, vol. 21, 2022, pp. 159–178, <https://doi.org/10.1016/j.ecosta.2021.04.004>.
 
 Ramsay, James O., and Bernard W. Silverman. Functional Data Analysis. Springer, 1997.
+
+Zhang, Chao, et al. ‘Wasserstein Autoregressive Models for Density Time Series’. arXiv [Stat.ME], 2020, arxiv.org/abs/2006.12640. arXiv.
