@@ -4,6 +4,8 @@ author: "Mason Griswold (Advised by Julia Fukuyama)"
 date: "2026-04-16"
 ---
 
+The code related to this project can be found at [https://github.com/pitbox46/Density-Time-Series-Comparison]
+
 ## Introduction
 
 Traditionally, income distributions and longitudinal wealth dynamics are analyzed using aggregate statistics like the mean, median, or Gini coefficient.
