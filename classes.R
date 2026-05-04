@@ -70,6 +70,7 @@ DensityTimeSeries <- R6Class(
     dens_mat = NULL,
     quant_grid = NULL,
     quant_mat = NULL,
+    ftsm_order = 3,
     initialize = function(data_x = NA, data_time = NA, data_weights = NA) {
       self$data <- data.frame(
         time = data_time,
@@ -284,7 +285,7 @@ DensityTimeSeries <- R6Class(
         dens_grid,
         dens_mat[, which(as.numeric(colnames(dens_mat)) < target_time)]
       )
-      dens_ftsm <- ftsm(dens_fts, order = 3)
+      dens_ftsm <- ftsm(dens_fts, order = self$ftsm_order)
       # Uses auto.arima() under the hood
       forecast_dens <- forecast(
         dens_ftsm,
@@ -311,7 +312,10 @@ DensityTimeSeries <- R6Class(
     },
     # Predicts the target year using a model built from all years prior
     # Uses WARp model
-    wasserstein_ar = function(target_time, order = 1, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+    wasserstein_ar = function(target_time,
+                              order = 1,
+                              dens_grid = self$dens_grid,
+                              dens_mat = self$dens_mat) {
       # Fit the WARp model
       data_WAR1 <- WARp(
         self$quant_mat[, which(colnames(self$quant_mat) < target_time)],
@@ -349,7 +353,9 @@ DensityTimeSeries <- R6Class(
       )
     },
     # Bayes Space stuff
-    bayes_ar = function(target_time, dens_grid = self$dens_grid, dens_mat = self$dens_mat) {
+    bayes_ar = function(target_time,
+                        dens_grid = self$dens_grid,
+                        dens_mat = self$dens_mat) {
       # Transformation: Proper Centered Log-Ratio (CLR) per column
       log_dens <- log(pmax(dens_mat, 1e-12))
 

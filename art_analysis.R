@@ -228,3 +228,24 @@ save_plot(
 
 create_anim(plot_title, analysis_obj, 20:40, models)
 anim_save("media/unif.mp4")
+
+# Running uniform again with higher order for ftsm
+
+analysis_obj <- create_analaysis_obj(data)
+analysis_obj$ftsm_order <- 6
+models <- models_func(analysis_obj)
+test_all_models(20:40, analysis_obj, models)
+
+plot_title <- "Uniform"
+
+save_plot(
+  plot_title,
+  "media/unif40.png",
+  analysis_obj,
+  40,
+  models,
+  asinh_scale = FALSE
+)
+
+create_anim(plot_title, analysis_obj, 20:40, models)
+anim_save("media/unif_order6.mp4")
