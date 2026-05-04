@@ -240,7 +240,7 @@ plot_title <- "Uniform"
 
 save_plot(
   plot_title,
-  "media/unif40.png",
+  "media/unif40_order6.png",
   analysis_obj,
   40,
   models,
