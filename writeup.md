@@ -302,6 +302,26 @@ This instability seems to be isolated to the Uniform distribution.
 The WAR method, by operating directly on the empirical cumulative distribution functions (CDFs) rather than smoothed PDFs, respects the hard boundaries of the uniform distribution without requiring the subjective tuning of a kernel bandwidth.
 The WAR also exhibits good predictive accuracy with a Wasserstein distance within 5% of the LQD method.
 
+### The Effects of Using More Basis Functions
+
+When constructing autoregressive models using FPCA, we must choose a certain number of principal components to use.
+Unfortunately, we were constrained to using only three principal components for this study.
+The R packages that we relied on to generate autoregressive models using FPCA seem to have computational issues
+when we tried to use a higher number of basis functions.
+However, we were able to run the Uniform example with six basis functions so we could see what effects the
+number of basis functions has on the model's fit.
+We found that the Wasserstein distance decreased marginally, but the visual fit continued to be quite poor.
+
+| Model                      | Average Wasserstein Distance |
+| :------------------------- | :--------------------------- |
+| FDA (Standard FPCA)        | 1.336595                     |
+| Bayes (clr Transformation) | 1.471308                     |
+| LQD Transformation         | 1.142018                     |
+| WAR (Wasserstein AR)       | 1.199208                     |
+
+![Quantile predictions of several Density Time Series methods on Uniform data with an autoregressive lower and upper bounds.
+Taken at the maximum time, 40 and with 6 basis functions](media/unif40_order6.png)
+
 ## Real Data: US Individual Incomes
 
 Evaluating predictive models exclusively on synthetic datasets may not accurately reflect their performance in real-world applications.
